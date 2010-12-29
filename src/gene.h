@@ -40,11 +40,19 @@ class Gene: public Region
 		vector<segment> cds_exons;
 		vector<segment> utr3exons;
 		vector<segment> utr5exons;
+		int intergenic_region_start;
+		int intergenic_region_stop;
 
 		void find_orf(int min_len, float separation);
 		void get_mRNA_seq(char** seq, int* len);
 		int map_rna_to_dna(int rna_pos);
 		void split_exons(int tis, int stop);
+
+		void print_region(_IO_FILE*& fd)
+		{
+			char* chr = gio->get_contig_name(chr_num);
+			fprintf(fd,"%s\t%i\t%i\t%c\n", chr, intergenic_region_start, intergenic_region_stop, strand);
+		}
 
 		void print(_IO_FILE*& fd)
 		{

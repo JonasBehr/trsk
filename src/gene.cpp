@@ -20,15 +20,14 @@ void Gene::find_orf(int min_len, float separation)
 	int len; 
 	get_mRNA_seq(&mRNA_seq, &len); 
 
-	printf("strand: %c, len: %i \n%s\n", strand, len, mRNA_seq);
-
+	//printf("strand: %c, len: %i \n%s\n", strand, len, mRNA_seq);
 
 	int tis = 0;
 	int stop = 0;
 	int second_best = 0;
 	GeneTools::find_max_orf(mRNA_seq, len, &tis, &stop, &second_best);
 
-	printf("tis:%i, stop:%i, len:%i second:%i\n", tis, stop, stop-tis, second_best);
+	//printf("tis:%i, stop:%i, len:%i second:%i\n", tis, stop, stop-tis, second_best);
 
 	int orflen = stop-tis;
 	if (orflen<min_len || ((double) second_best)/orflen>separation)
@@ -37,9 +36,9 @@ void Gene::find_orf(int min_len, float separation)
 		return;
 	}
 	string tis_cons(&mRNA_seq[tis], 3);
-	printf("tis_cons: %s\n", tis_cons.c_str()); 
+	//printf("tis_cons: %s\n", tis_cons.c_str()); 
 	string stop_cons(&mRNA_seq[stop], 3);
-	printf("stop_cons: %s\n", stop_cons.c_str()); 
+	//printf("stop_cons: %s\n", stop_cons.c_str()); 
 
 	int dna_tis = map_rna_to_dna(tis);
 	int dna_stop = map_rna_to_dna(stop);
@@ -51,12 +50,12 @@ void Gene::find_orf(int min_len, float separation)
 		dna_stop-=3;
 	}
 
-	printf("dna_tis: %i, dna_stop:%i\n", dna_tis-start, dna_stop-start);
+	//printf("dna_tis: %i, dna_stop:%i\n", dna_tis-start, dna_stop-start);
 
 	string dna_tis_cons(&seq[dna_tis-start], 3);
-	printf("dna tis_cons: %s\n", dna_tis_cons.c_str()); 
+	//printf("dna tis_cons: %s\n", dna_tis_cons.c_str()); 
 	string dna_stop_cons(&seq[dna_stop-start], 3);
-	printf("dna stop_cons: %s\n", dna_stop_cons.c_str()); 
+	//printf("dna stop_cons: %s\n", dna_stop_cons.c_str()); 
 
 	split_exons(dna_tis, dna_stop);
 }

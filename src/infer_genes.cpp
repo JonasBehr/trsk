@@ -2,6 +2,7 @@
 	using std::string;
 #include <vector>
 	using std::vector;
+#include <math.h>
 #include "region.h"
 #include "genome.h"
 #include "gene.h"
@@ -119,12 +120,10 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
 	int min_len = 30;
     int win = 20;
 	int j;
+	float start_cov = mean(region->coverage, exon.first, exon.first+win);
 	for (j=exon.first; j<exon.second-win; j+=10)//jump to speed up computation
 	{
         float win_cov = mean(region->coverage, j, j+win);
-		float start_cov;
-        if (j == exon.first)
-            start_cov = win_cov;
         if (win_cov<threshold)
             break;
 
@@ -149,12 +148,10 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 	int min_len = 30; 
     int win = 20;
 	int j;
+	float start_cov = mean(region->coverage, exon.second-win, exon.second);
 	for (j=exon.second-win; j>exon.first; j-=10)
 	{
         float win_cov = mean(region->coverage, j, j+win);
-		float start_cov;
-        if (j == exon.second-win)
-            start_cov = win_cov;
         if (win_cov<threshold)
             break;
 
@@ -251,7 +248,40 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 	return exons;
 }
 
+void InferGenes::find_intergenic_region(Region* region, Gene* gene)
+{
+	// find start
+	float relative_length = 0.5;
+	int threshold = 3;
+	int min_len = 50; 
+    int win = 100;
+	bool strand_specific = false;
+	int j;
+	for (j=gene->start-win-min_len; j>0; j-=10)
+	{
+        float win_cov = mean(region->intron_coverage, j, j+win);
+        if (strand_specific)
+			win_cov += mean(region->coverage, j, j+win);
+        
+		if (win_cov>threshold)
+            break;
+	}
+	int region_start = j+win;
+	gene->intergenic_region_start = (int) ceil((1-relative_length)*gene->start+relative_length*region_start);
+	// find end
+	for (j=gene->stop+min_len; j<region->stop-win-1; j+=10)
+	{
+        float win_cov = mean(region->intron_coverage, j, j+win);
+        if (strand_specific)
+			win_cov += mean(region->coverage, j, j+win);
+        
+		if (win_cov>threshold)
+            break;
+	}
+	gene->intergenic_region_stop = (int) ceil((1-relative_length)*gene->stop+relative_length*j);
 
+	//printf("reg: %i int_start: %i, start:%i, stop: %i, int_stop: %i\n", region_start, gene->intergenic_region_start, gene->start, gene->stop, gene->intergenic_region_stop);
+}
 
 void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 {
@@ -279,18 +309,19 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		if (exons->size()>0)
 		{
 			Gene* g = new Gene(exons, region->chr_num, region->strand, region->gio);
+			find_intergenic_region(region, g);
 			genes->push_back(g);
 		}
 	}
 }
 
-int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file)
+int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file, char* reg_file)
 {   
 	vector<Region*> regions = GeneTools::init_regions(gio_file);
 	printf("regions.size(): %i\n", (int) regions.size());
 
-	regions[0]->stop = 1e6;
-	regions[1]->stop = 1e6;
+	//regions[0]->stop = 1e6;
+	//regions[1]->stop = 1e6;
 	vector<Gene*> genes;
 	for (int r=0; r<regions.size(); r++)
 	//for (int r=1; r<2; r++)
@@ -300,11 +331,6 @@ int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file)
 		regions[r]->compute_coverage();
 		regions[r]->compute_intron_list();
 		regions[r]->compute_intron_coverage();
-
-	if (regions[r]->all_reads[0]->read_id)
-			printf("read_id %s\n", regions[r]->all_reads[0]->read_id); 
-		else
-			printf("read id is null\n");
 
 		infer_genes(regions[r], &genes);
 		delete regions[r];
@@ -321,14 +347,17 @@ int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file)
 	//genes[1]->find_orf();
 	regions.clear();
 
-	FILE* fd = fopen(gff_file, "w"); 
+	FILE* gff_fd = fopen(gff_file, "w"); 
+	FILE* reg_fd = fopen(reg_file, "w"); 
 
 	for (int r=0; r<genes.size(); r++)
 	{
 		genes[r]->find_orf(300, 0.7);
-		genes[r]->print_gff3(fd, r+1);
+		genes[r]->print_gff3(gff_fd, r+1);
+		genes[r]->print_region(reg_fd);
 		delete genes[r];
 	}
-	fclose(fd);
+	fclose(gff_fd);
+	fclose(reg_fd);
 	genes.clear();
 }

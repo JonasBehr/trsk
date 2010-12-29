@@ -12,7 +12,7 @@ class InferGenes
 {
 	public: 
 		static void infer_genes(Region* region, vector<Gene*>* genes);
-		static int run_infer_genes(char* gio_file, char* bam_file, char* gff_file);
+		static int run_infer_genes(char* gio_file, char* bam_file, char* gff_file, char* reg_gile);
 
 
 	private:
@@ -21,6 +21,7 @@ class InferGenes
 		static int score_cand_exon(segment exon, Region* region);
 		static segment find_terminal_exon(segment exon, Region* region);
 		static segment find_initial_exon(segment exon, Region* region);
+		static void find_intergenic_region(Region* region, Gene* gene);
 		static vector<segment>* greedy_extend(int intron_idx, Region* region, bool* intron_used);
 		static float mean(uint32_t* arr, int from, int to);
 };
