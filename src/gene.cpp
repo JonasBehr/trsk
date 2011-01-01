@@ -40,6 +40,7 @@ void Gene::find_orf(int min_len, float separation)
 	string stop_cons(&mRNA_seq[stop], 3);
 	//printf("stop_cons: %s\n", stop_cons.c_str()); 
 
+
 	int dna_tis = map_rna_to_dna(tis);
 	int dna_stop = map_rna_to_dna(stop);
 	if (strand=='-')
@@ -50,14 +51,16 @@ void Gene::find_orf(int min_len, float separation)
 		dna_stop-=3;
 	}
 
+	delete[] mRNA_seq;
 	//printf("dna_tis: %i, dna_stop:%i\n", dna_tis-start, dna_stop-start);
 
-	string dna_tis_cons(&seq[dna_tis-start], 3);
+	//string dna_tis_cons(&seq[dna_tis-start], 3);
 	//printf("dna tis_cons: %s\n", dna_tis_cons.c_str()); 
-	string dna_stop_cons(&seq[dna_stop-start], 3);
+	//string dna_stop_cons(&seq[dna_stop-start], 3);
 	//printf("dna stop_cons: %s\n", dna_stop_cons.c_str()); 
+	if (dna_tis>-1 && dna_stop>-1)
+		split_exons(dna_tis, dna_stop);
 
-	split_exons(dna_tis, dna_stop);
 }
 void Gene::split_exons(int tis, int stop)
 {
@@ -200,13 +203,16 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 			exon_len = exon_len-1;
 		string* exon_seq = new string(&seq[exon_start_local], exon_len);
 		*sseq += *exon_seq;
+		delete exon_seq;
 	}
-
-	*mRNA_seq = (char*) sseq->c_str(); 
 	*len = (int) sseq->size();
 	if (strand=='-')
 	{
 		reverse(sseq->begin(),(sseq->end()));
 		gio->complement((char*) sseq->c_str(), *len);
 	}
+	*mRNA_seq = new char [sseq->size()+1];
+	strcpy(*mRNA_seq, sseq->c_str());
+
+	delete sseq;
 }

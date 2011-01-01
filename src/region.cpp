@@ -216,7 +216,6 @@ void Region::compute_intron_list()
 	int sum = 0;
 	for (int i=0; i<intron_counts.size(); i++)
 		sum+=intron_counts[i]; 
-	printf("counts sum to %i\n", sum);
 	assert(sum==intron_list.size());
 }
 

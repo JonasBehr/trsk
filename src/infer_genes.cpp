@@ -3,6 +3,7 @@
 #include <vector>
 	using std::vector;
 #include <math.h>
+#include <assert.h>
 #include "region.h"
 #include "genome.h"
 #include "gene.h"
@@ -71,6 +72,9 @@ int InferGenes::score_cand_intron(int idx, Region* region)
 int InferGenes::score_cand_exon(segment exon, Region* region)
 {
 	int exon_len = exon.second-exon.first+1; 
+	int min_len = 10;
+	if (exon_len<min_len)
+		return 0;
 	int mean_cov = 0;
 	int min_cov  = 1000; 
 	int zero_cov = 0;
@@ -94,7 +98,7 @@ int InferGenes::score_cand_exon(segment exon, Region* region)
 		//looks like an intergenic region 
 		return -1;
 	}
-	if (mean_cov>10&&((double)low_cov)/exon_len<0.01)
+	if (mean_cov>5&&((double)low_cov)/exon_len<0.01)
 	{
 		// the more than 99% of all nucleotides are covered 
 		// higher than some threshold (exon_cut)
@@ -137,13 +141,16 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
 
 	float mean_cov = mean(region->coverage, exon.first, exon.second);
 	//printf("terminal exon: mean cov: %f\n", mean_cov);
-	if (exon.second-exon.first<min_len || mean_cov<3*threshold)
+	if (exon.second-exon.first<min_len || mean_cov<2*threshold)
 		exon.second = -1;
 	return exon;
 }
 segment InferGenes::find_initial_exon(segment exon, Region* region)
 {
 	//printf("initial exon[%i, %i], cov: %i\n", exon.first, exon.second, (int) region->coverage[exon.second]);
+	assert(exon.first>=0);
+	assert(exon.second<region->stop);
+	int orig_start = exon.first;
 	int threshold = 3;
 	int min_len = 30; 
     int win = 20;
@@ -164,8 +171,11 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 		exon.first = std::max(j-3*win, exon.first);
 
 	float mean_cov = mean(region->coverage, exon.first, exon.second);
+	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.second);
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
-	if (exon.second-exon.first<min_len || mean_cov<3*threshold)
+	if (exon.second-exon.first<min_len || mean_cov<2*threshold)
+		exon.first = -1;
+	if (mean_intron_cov>2)//gene is likely to be cut
 		exon.first = -1;
 	return exon;
 }
@@ -178,7 +188,7 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 
 	vector<segment>* exons = new vector<segment>(); 
 
-	segment initial_exon(cur_intron.first-max_exon_len, cur_intron.first-1);
+	segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
 	initial_exon = find_initial_exon(initial_exon, region);
 
 	if (initial_exon.first==-1)
@@ -193,7 +203,17 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 			next_intron = region->unique_introns[next_idx];
 		else
 		{
-			printf("no intron found\n");
+	//		printf("no intron found\n");
+	//		segment exon(cur_intron.second+1, std::min(region->stop, cur_intron.second+max_exon_len));
+	//		exon = find_terminal_exon(exon, region);
+	//		if (exon.second==-1)
+	//		{
+	//			exons->clear();
+	//			return exons;
+	//		}
+	//		exons->push_back(exon);
+	//		break;
+
 			exons->clear();
 			return exons;
 		}
@@ -231,6 +251,12 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 			exons->push_back(exon); 
 			cur_idx = next_idx;
 			cur_intron = region->unique_introns[cur_idx];
+		}
+		else if (exon_score==0)
+		{
+			// unclear => reject transcript
+			exons->clear();
+			return exons;
 		}
 		else
 		{
@@ -290,7 +316,7 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		intron_used[i] = false;
 
 	//int median_cnt = median(region->intron_counts);
-	int median_cnt = 5;
+	int median_cnt = 3;
 
 	for (int i=0; i<region->unique_introns.size(); i++)
 	{
