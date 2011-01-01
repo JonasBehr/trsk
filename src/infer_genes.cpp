@@ -56,7 +56,7 @@ int InferGenes::score_cand_intron(int idx, Region* region)
 {
 	segment intron = region->unique_introns[idx];
 
-	if (region->intron_counts[idx]<3)
+	if (region->intron_counts[idx]<2)
 		return -1;
 
 	int mean_cov = 0; 
@@ -78,7 +78,7 @@ int InferGenes::score_cand_exon(segment exon, Region* region)
 	int mean_cov = 0;
 	int min_cov  = 1000; 
 	int zero_cov = 0;
-	int exon_cut = 5;
+	int exon_cut = 3;
 	int low_cov  = 0;
 	for (int i=exon.first; i<exon.second; i++)
 	{
@@ -93,7 +93,7 @@ int InferGenes::score_cand_exon(segment exon, Region* region)
 	mean_cov = mean_cov/exon_len;
 
 	//printf("mean_cov: %i, min_cov: %i zero_frac: %f\n", mean_cov, min_cov, ((double)zero_cov)/exon_len);
-	if (((double)zero_cov)/exon_len>0.5)
+	if (((double)zero_cov)/exon_len>0.2)
 	{
 		//looks like an intergenic region 
 		return -1;
@@ -175,7 +175,7 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
 	if (exon.second-exon.first<min_len || mean_cov<2*threshold)
 		exon.first = -1;
-	if (mean_intron_cov>2)//gene is likely to be cut
+	if (mean_intron_cov>1)//gene is likely to be cut
 		exon.first = -1;
 	return exon;
 }
@@ -187,6 +187,9 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 	segment cur_intron = region->unique_introns[cur_idx];
 
 	vector<segment>* exons = new vector<segment>(); 
+
+	if (score_cand_intron(intron_idx, region)==-1)
+		return exons;
 
 	segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
 	initial_exon = find_initial_exon(initial_exon, region);
@@ -316,15 +319,15 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		intron_used[i] = false;
 
 	//int median_cnt = median(region->intron_counts);
-	int median_cnt = 3;
+	//int median_cnt = 3;
 
 	for (int i=0; i<region->unique_introns.size(); i++)
 	{
 		if (intron_used[i])
 			continue;
 		
-		if (region->intron_counts[i]<median_cnt)
-			continue;
+		//if (region->intron_counts[i]<median_cnt)
+		//	continue;
 
 		intron_used[i] = true;
 		

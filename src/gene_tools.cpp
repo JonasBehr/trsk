@@ -77,6 +77,8 @@ void GeneTools::find_max_orf(char* seq, int len, int* tis, int* stop, int* secon
 	}
 	delete tis_cons[0];
 	delete stop_cons[0];
+	delete stop_cons[1];
+	delete stop_cons[2];
 }
 vector<Region*> GeneTools::init_regions(const char* gio_fname)
 {

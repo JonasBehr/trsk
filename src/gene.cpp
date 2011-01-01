@@ -32,7 +32,7 @@ void Gene::find_orf(int min_len, float separation)
 	int orflen = stop-tis;
 	if (orflen<min_len || ((double) second_best)/orflen>separation)
 	{
-		printf("rejected: len:%i second:%i, frac: %1.2f\n", stop-tis, second_best, second_best/((double) orflen));
+		//printf("rejected: len:%i second:%i, frac: %1.2f\n", stop-tis, second_best, second_best/((double) orflen));
 		return;
 	}
 	string tis_cons(&mRNA_seq[tis], 3);
