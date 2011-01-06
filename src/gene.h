@@ -36,6 +36,13 @@ class Gene: public Region
 			strand = pstrand;
 			gio = pgio; 
 		};
+		~Gene()
+		{
+			exons.clear();
+			cds_exons.clear();	
+			utr5exons.clear();	
+			utr3exons.clear();	
+		};
 	
 		vector<segment> exons;
 		vector<segment> cds_exons;

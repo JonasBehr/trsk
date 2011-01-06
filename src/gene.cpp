@@ -180,7 +180,8 @@ int Gene::map_rna_to_dna(int rna_pos)
 		mrna_len += exons[exon_cnt].second-exons[exon_cnt].first+1;
 		exon_cnt++;
 	}
-	exon_cnt--;
+	if (exon_cnt>0)
+		exon_cnt--;
 	if (rna_pos<=mrna_len)
 		return rna_pos-prev_mrna_len+exons[exon_cnt].first;
 	else
