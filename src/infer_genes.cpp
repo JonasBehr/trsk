@@ -52,6 +52,39 @@ int InferGenes::find_next_intron(int idx, Region* region)
 	}
 	return max_idx;
 }
+/** find intron with maximal end position to the left of the 
+ *  intron handed over 
+ */
+int InferGenes::find_previous_intron(int idx, Region* region)
+{
+	segment start_intron = region->unique_introns[idx];
+	// unique introns sorted by start
+	int cidx = idx-1;
+	int max_intron_len = 30000; // in fact this should be intron+exon len
+	int max_second = 0;
+	int max_cov = 0;
+	int best_idx = -1;
+	segment cintron = region->unique_introns[cidx];
+	while(cidx>0 & cintron.first>start_intron.first-max_intron_len)
+	{
+		cintron = region->unique_introns[cidx];
+		if (cintron.second>=start_intron.first)
+			continue;
+
+		if (cintron.second>max_second)
+		{
+			max_second = cintron.second;
+			best_idx = cidx;
+		}
+		else if (cintron.second==max_second && region->intron_counts[cidx]>max_cov)
+		{
+			max_cov = region->intron_counts[cidx];
+			best_idx = cidx;
+		}
+		cidx--; 
+	}
+	return best_idx;
+}
 int InferGenes::score_cand_intron(int idx, Region* region)
 {
 	segment intron = region->unique_introns[idx];
@@ -191,6 +224,8 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 	if (score_cand_intron(intron_idx, region)==-1)
 		return exons;
 
+	// extent upstream
+	
 	segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
 	initial_exon = find_initial_exon(initial_exon, region);
 
