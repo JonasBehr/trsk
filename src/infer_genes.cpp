@@ -3,14 +3,14 @@
 #include <vector>
 	using std::vector;
 #include <math.h>
+#include <algorithm>
 #include <assert.h>
 #include "region.h"
 #include "genome.h"
 #include "gene.h"
 #include "gene_tools.h"
 #include "infer_genes.h"
-
-
+#include "Config.h"
 
 //int median(vector<int>* vec)
 //{
@@ -57,6 +57,8 @@ int InferGenes::find_next_intron(int idx, Region* region)
  */
 int InferGenes::find_previous_intron(int idx, Region* region)
 {
+	if (idx==0)
+		return -1;
 	segment start_intron = region->unique_introns[idx];
 	// unique introns sorted by start
 	int cidx = idx-1;
@@ -65,13 +67,13 @@ int InferGenes::find_previous_intron(int idx, Region* region)
 	int max_cov = 0;
 	int best_idx = -1;
 	segment cintron = region->unique_introns[cidx];
-	while(cidx>0 & cintron.first>start_intron.first-max_intron_len)
+	while(cidx>0 && cintron.first>start_intron.first-max_intron_len)
 	{
 		cintron = region->unique_introns[cidx];
 		if (cintron.second>=start_intron.first)
-			continue;
-
-		if (cintron.second>max_second)
+		{	//skip
+		}
+		else if (cintron.second>max_second)
 		{
 			max_second = cintron.second;
 			best_idx = cidx;
@@ -105,8 +107,8 @@ int InferGenes::score_cand_intron(int idx, Region* region)
 int InferGenes::score_cand_exon(segment exon, Region* region)
 {
 	int exon_len = exon.second-exon.first+1; 
-	int min_len = 10;
-	if (exon_len<min_len)
+	int min_exon_len = 10;
+	if (exon_len<min_exon_len)
 		return 0;
 	int mean_cov = 0;
 	int min_cov  = 1000; 
@@ -154,7 +156,7 @@ float InferGenes::mean(uint32_t* arr, int from, int to)
 segment InferGenes::find_terminal_exon(segment exon, Region* region)
 {
 	int threshold = 3;
-	int min_len = 30;
+	int min_exon_len = 30;
     int win = 20;
 	int j;
 	float start_cov = mean(region->coverage, exon.first, exon.first+win);
@@ -174,7 +176,7 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
 
 	float mean_cov = mean(region->coverage, exon.first, exon.second);
 	//printf("terminal exon: mean cov: %f\n", mean_cov);
-	if (exon.second-exon.first<min_len || mean_cov<2*threshold)
+	if (exon.second-exon.first<min_exon_len || mean_cov<2*threshold)
 		exon.second = -1;
 	return exon;
 }
@@ -185,7 +187,7 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 	assert(exon.second<region->stop);
 	int orig_start = exon.first;
 	int threshold = 3;
-	int min_len = 30; 
+	int min_exon_len = 30; 
     int win = 20;
 	int j;
 	float start_cov = mean(region->coverage, exon.second-win, exon.second);
@@ -206,7 +208,7 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 	float mean_cov = mean(region->coverage, exon.first, exon.second);
 	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.second);
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
-	if (exon.second-exon.first<min_len || mean_cov<2*threshold)
+	if (exon.second-exon.first<min_exon_len || mean_cov<2*threshold)
 		exon.first = -1;
 	if (mean_intron_cov>1)//gene is likely to be cut
 		exon.first = -1;
@@ -225,14 +227,82 @@ vector<segment>* InferGenes::greedy_extend(int intron_idx, Region* region, bool*
 		return exons;
 
 	// extent upstream
-	
-	segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
-	initial_exon = find_initial_exon(initial_exon, region);
+	while (true)
+	{
+		//printf("extend upstream: cur_idx: %i\n", cur_idx);
+		int prev_idx = find_previous_intron(cur_idx, region);
+		//printf("extend upstream: cur_idx: %i, prev_idx: %i\n", cur_idx, prev_idx);
+		segment prev_intron;
+		if (prev_idx==-1)
+		{
+			// cannot find previous intron => search for initial exon
+			segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
+			initial_exon = find_initial_exon(initial_exon, region);
+			if (initial_exon.first==-1)
+				return exons; 
+			exons->push_back(initial_exon);
+			break;
+		}
+		else
+		{
+			prev_intron = region->unique_introns[prev_idx];
+		}
+		intron_used[prev_idx] = true;
+		segment exon(prev_intron.second+1, cur_intron.first-1);
+		if (score_cand_intron(prev_idx, region)==-1 && exon.second-exon.first<max_exon_len)
+		{
+			//todo: differentiate between introns with low coverage and introns 
+			//that are often skipped
+			exons->clear();
+			return exons;
+		}
+		if (exon.second-exon.first>max_exon_len)
+		{
+			exon = find_initial_exon(exon, region);
+			if (exon.first==-1)
+			{
+				exons->clear();
+				return exons;
+			}
+			exons->push_back(exon);
+			break;
+		}
+		int exon_score = score_cand_exon(exon, region);
+		if (exon_score==1)
+		{
+			// accept current exon and move on to next intron
+			exons->push_back(exon); 
+			cur_idx = prev_idx;
+			cur_intron = region->unique_introns[cur_idx];
+		}
+		else if (exon_score==0)
+		{
+			// unclear => reject transcript
+			exons->clear();
+			return exons;
+		}
+		else
+		{
+			exon = find_initial_exon(exon, region); 
+			if (exon.first==-1)
+			{
+				exons->clear();
+				return exons;
+			}
+			exons->push_back(exon);
+			break; 
+		}
+	}	
+	//segment initial_exon(std::max(0, cur_intron.first-max_exon_len), cur_intron.first-1);
+	//initial_exon = find_initial_exon(initial_exon, region);
 
-	if (initial_exon.first==-1)
-		return exons; 
-	exons->push_back(initial_exon);
+	//if (initial_exon.first==-1)
+	//	return exons; 
+	//exons->push_back(initial_exon);
+
 	// extend transcript downstream
+	cur_idx = intron_idx; 
+	cur_intron = region->unique_introns[cur_idx];
 	while (true)
 	{
 		int next_idx = find_next_intron(cur_idx, region);
@@ -317,11 +387,11 @@ void InferGenes::find_intergenic_region(Region* region, Gene* gene)
 	// find start
 	float relative_length = 0.5;
 	int threshold = 3;
-	int min_len = 50; 
+	int min_intergenic_len = 50; 
     int win = 100;
 	bool strand_specific = false;
 	int j;
-	for (j=gene->start-win-min_len; j>0; j-=10)
+	for (j=gene->start-win-min_intergenic_len; j>0; j-=10)
 	{
         float win_cov = mean(region->intron_coverage, j, j+win);
         if (strand_specific)
@@ -333,7 +403,7 @@ void InferGenes::find_intergenic_region(Region* region, Gene* gene)
 	int region_start = j+win;
 	gene->intergenic_region_start = (int) ceil((1-relative_length)*gene->start+relative_length*region_start);
 	// find end
-	for (j=gene->stop+min_len; j<region->stop-win-1; j+=10)
+	for (j=gene->stop+min_intergenic_len; j<region->stop-win-1; j+=10)
 	{
         float win_cov = mean(region->intron_coverage, j, j+win);
         if (strand_specific)
@@ -372,6 +442,8 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 
 		if (exons->size()>0)
 		{
+			// sort exons by start position
+			sort(exons->begin(), exons->end());
 			Gene* g = new Gene(exons, region->chr_num, region->strand, region->gio);
 			find_intergenic_region(region, g);
 			genes->push_back(g);
@@ -384,11 +456,18 @@ int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file, 
 	vector<Region*> regions = GeneTools::init_regions(gio_file);
 	printf("regions.size(): %i\n", (int) regions.size());
 
+	
+	Config* conf = new Config();
+	conf->print(stdout);
+	//InferGenes::config = new Config();
+	//InferGenes::config->print(stdout);
+	//InferGenes* ifg = new InferGenes();
+
 	//regions[0]->stop = 1e6;
 	//regions[1]->stop = 1e6;
 	vector<Gene*> genes;
+	//for (int r=0; r<2; r++)
 	for (int r=0; r<regions.size(); r++)
-	//for (int r=1; r<2; r++)
 	{
 		printf("Starting with contig %i, strand %c\n", regions[r]->chr_num, regions[r]->strand);
 		regions[r]->get_reads(&bam_file, 1);
@@ -397,18 +476,9 @@ int InferGenes::run_infer_genes(char* gio_file, char* bam_file, char* gff_file, 
 		regions[r]->compute_intron_coverage();
 
 		infer_genes(regions[r], &genes);
+		printf("found %i genes\n", (int) genes.size()); 
 		delete regions[r];
 	}
-	printf("found %i genes\n", (int) genes.size()); 
-
-	//genes[0]->find_orf();
-	//genes[0]->print_gff3(stdout, 0);
-	//printf("\n\n\n"); 
-	//genes[0]->strand='+';
-	//genes[0]->find_orf();
-	//genes[0]->print_gff3(stdout, 0);
-	//printf("\n\n\n"); 
-	//genes[1]->find_orf();
 	regions.clear();
 
 	FILE* gff_fd = fopen(gff_file, "w"); 

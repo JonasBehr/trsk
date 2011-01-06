@@ -29,5 +29,6 @@ int main(int argc, char* argv[])
 		gff_file = argv[3];
 		reg_file = argv[4];
 	}
+
 	InferGenes::run_infer_genes(gio_file, bam_file, gff_file, reg_file);
 }

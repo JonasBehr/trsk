@@ -22,6 +22,7 @@ class Gene: public Region
 		Gene(int pstart, int pstop, int pchr_num, char pstrand):Region(pstart, pstop, pchr_num, pstrand){};
 		Gene(vector<segment>* pexons, int pchr_num, char pstrand, Genome* pgio):Region()
 		{
+			// assert that exons are sorted
 			for (int i=1; i<exons.size(); i++)
 			{
 				assert(pexons->at(i-1).first <pexons->at(i-1).second);

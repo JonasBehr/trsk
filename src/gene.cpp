@@ -189,6 +189,10 @@ int Gene::map_rna_to_dna(int rna_pos)
 
 void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 {
+	if (start>=stop)
+	{
+		print(stdout);
+	}
 	if (!seq)
 		load_genomic_sequence();
 
