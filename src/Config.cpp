@@ -13,6 +13,7 @@ void Config::default_values()
 	max_intron_len = 30000;
 	min_exon_len = 10;
 	min_intergenic_len = 50;
+	max_intergenic_len = 20000;
 	intergenic_win = 100;
 	exon_cut = 3;
 	strand_specific = false;
@@ -21,7 +22,11 @@ void Config::default_values()
 	have_gio_file = false;
 	have_reg_file = false; 
 	have_gff_file = false;
-
+	find_orf = true;
+	min_orf_len = 300;
+	min_orf_sep = 0.7;
+	intron_conf = 1;
+	intron_seed_conf = 3;
 }
 int Config::parseCommandLine(int argc, char *argv[])
 {
@@ -47,6 +52,19 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			max_exon_len = atoi(argv[i]);
 		}
+        else if (strcmp(argv[i], "-maxin") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -maxin\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			max_intron_len = atoi(argv[i]);
+		}
         else if (strcmp(argv[i], "-minel") == 0) 
 		{
 
@@ -59,6 +77,84 @@ int Config::parseCommandLine(int argc, char *argv[])
             }
 			i++; 
 			min_exon_len = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-incf") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -incf\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			intron_conf = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-inscf") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -inscf\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			intron_seed_conf = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-excut") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -excut\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			exon_cut = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-iw") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -iw\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			intergenic_win = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-minic") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -minic\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			min_intergenic_len = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-maxic") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -maxic\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			max_intergenic_len = atoi(argv[i]);
 		}
 	    else if (strcmp(argv[i], "-reglen") == 0) 
 		{
@@ -79,6 +175,51 @@ int Config::parseCommandLine(int argc, char *argv[])
             not_defined = 0;
 			strand_specific = true;
 		}
+		else if (strcmp(argv[i], "-nss") == 0) 
+		{
+
+            not_defined = 0;
+			strand_specific = false;
+		}
+		else if (strcmp(argv[i], "-orf") == 0) 
+		{
+
+            not_defined = 0;
+			find_orf = true;
+		}
+		else if (strcmp(argv[i], "-noorf") == 0) 
+		{
+
+            not_defined = 0;
+			find_orf = false;
+		}
+		else if (strcmp(argv[i], "-orflen") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -orflen\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			min_orf_len = atoi(argv[i]);
+		}
+		    else if (strcmp(argv[i], "-orfsep") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -orfsep\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			min_orf_sep = atof(argv[i]);
+		}
+
 		else if (strcmp(argv[i], "-bam") == 0)
 		{
 			not_defined = 0;

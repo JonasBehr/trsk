@@ -91,7 +91,7 @@ int InferGenes::score_cand_intron(int idx, Region* region)
 {
 	segment intron = region->unique_introns[idx];
 
-	if (region->intron_counts[idx]<2)
+	if (region->intron_counts[idx]<conf->intron_conf)
 		return -1;
 
 	int mean_cov = 0; 
@@ -383,8 +383,8 @@ void InferGenes::find_intergenic_region(Region* region, Gene* gene)
 	// find start
 	float relative_length = (float) conf->region_rel_length;
 	int threshold = 3;
-	int min_intergenic_len = 50; 
-    int win = 100;
+	int min_intergenic_len = conf->min_intergenic_len; 
+    int win = conf->intergenic_win;
 	bool strand_specific = conf->strand_specific;
 	int j;
 	for (j=gene->start-win-min_intergenic_len; j>0; j-=10)
@@ -398,6 +398,8 @@ void InferGenes::find_intergenic_region(Region* region, Gene* gene)
 	}
 	int region_start = j+win;
 	gene->intergenic_region_start = (int) ceil((1-relative_length)*gene->start+relative_length*region_start);
+	if (gene->intergenic_region_start<gene->start-conf->max_intergenic_len)
+		gene->intergenic_region_start = gene->start-conf->max_intergenic_len;
 	// find end
 	for (j=gene->stop+min_intergenic_len; j<region->stop-win-1; j+=10)
 	{
@@ -409,7 +411,9 @@ void InferGenes::find_intergenic_region(Region* region, Gene* gene)
             break;
 	}
 	gene->intergenic_region_stop = (int) ceil((1-relative_length)*gene->stop+relative_length*j);
-
+	if (gene->intergenic_region_stop>gene->stop+conf->max_intergenic_len)
+		gene->intergenic_region_stop = gene->stop+conf->max_intergenic_len;
+		
 	//printf("reg: %i int_start: %i, start:%i, stop: %i, int_stop: %i\n", region_start, gene->intergenic_region_start, gene->start, gene->stop, gene->intergenic_region_stop);
 }
 
@@ -427,8 +431,8 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		if (intron_used[i])
 			continue;
 		
-		//if (region->intron_counts[i]<median_cnt)
-		//	continue;
+		if (region->intron_counts[i]<conf->intron_seed_conf)
+			continue;
 
 		intron_used[i] = true;
 		
@@ -496,7 +500,8 @@ int InferGenes::run_infer_genes()
 
 	for (int r=0; r<genes.size(); r++)
 	{
-		genes[r]->find_orf(300, 0.7);
+		if (conf->find_orf)
+			genes[r]->find_orf(300, 0.7);
 		genes[r]->print_gff3(gff_fd, r+1);
 		genes[r]->print_region(reg_fd);
 		delete genes[r];
