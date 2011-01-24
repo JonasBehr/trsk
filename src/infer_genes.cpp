@@ -201,9 +201,15 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
 	//printf("terminal exon: mean cov: %f\n", mean_cov);
 	float mean_intron_cov = mean(region->intron_coverage, exon.first, orig_stop);
 	if (exon.second-exon.first<conf->min_exon_len || mean_cov<2*threshold)
+	{
 		exon.second = -1;
+		term_reject_cov++;
+	}
 	if (mean_intron_cov>1)//gene is likely to be cut
+	{
 		exon.second = -1;
+		term_reject_intron++;
+	}
 
 	return exon;
 }
@@ -235,9 +241,15 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.second);
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
 	if (exon.second-exon.first<conf->min_exon_len || mean_cov<2*threshold)
+	{
 		exon.first = -1;
+		init_reject_cov++;
+	}
 	if (mean_intron_cov>1)//gene is likely to be cut
+	{
 		exon.first = -1;
+		init_reject_intron++;
+	}
 	return exon;
 }
 bool InferGenes::check_segment(segment seg, Region* region)
@@ -485,6 +497,10 @@ int InferGenes::run_infer_genes()
 	no_upstream_intron_reject = 0;	
 	no_downstream_intron = 0;	
 	no_downstream_intron_reject = 0;	
+	init_reject_intron = 0;
+	term_reject_intron = 0;
+	init_reject_cov = 0;
+	term_reject_cov = 0;
 	//
 
 	vector<Region*> regions = GeneTools::init_regions(conf->gio_file);
@@ -538,6 +554,10 @@ int InferGenes::run_infer_genes()
 	printf("\tno upstream intron reject: %i\n", no_upstream_intron_reject);
 	printf("\tno downstream intron: %i\n", no_downstream_intron);
 	printf("\tno downstream intron reject: %i\n", no_downstream_intron_reject);
+	printf("\tinitial exon reject (cov): %i\n", init_reject_cov);
+	printf("\tinitial exon reject (intron): %i\n", init_reject_intron);
+	printf("\tterminal exon reject (cov): %i\n", term_reject_cov);
+	printf("\tterminal exon reject (intron): %i\n", term_reject_intron);
 	genes.clear();
 
 }

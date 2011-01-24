@@ -37,5 +37,9 @@ class InferGenes
 		int no_upstream_intron_reject; 
 		int no_downstream_intron; 
 		int no_downstream_intron_reject; 
+		int init_reject_intron; 
+		int term_reject_intron;
+		int init_reject_cov;
+		int term_reject_cov;
 };
 #endif
