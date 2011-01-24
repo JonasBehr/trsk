@@ -81,11 +81,17 @@ void Region::set_gio(Genome* pgio)
 
 void Region::load_genomic_sequence()
 {
+	if (!check_region())
+	{
+		print(stderr);
+		exit(-1);
+	}
 	seq = gio->read_flat_file(chr_num, start, stop);
 }
 
 void Region::print(_IO_FILE*& fd)
 {
+	fprintf(fd, "region %s\n", get_region_str());
 	fprintf(fd, "region start:\t%i\n", start);
 	fprintf(fd, "region stop:\t%i\n", stop);
 	fprintf(fd, "region strand:\t%c\n", strand);
@@ -106,7 +112,7 @@ char* Region::get_region_str()
 	return reg_str;
 }
 
-void Region::get_reads(char** bam_files, int num_bam_files)
+void Region::get_reads(char** bam_files, int num_bam_files, int intron_len_filter, int filter_mismatch, int exon_len_filter)
 {
 	char* reg_str = get_region_str();
 	int subsample = 1000;
@@ -120,9 +126,9 @@ void Region::get_reads(char** bam_files, int num_bam_files)
 	fprintf(stdout, "number of reads (not filtered): %d\n", (int) all_reads.size());
 	/* filter reads
 	* **************/
-	int exon_len_filter = 8;
-	int filter_mismatch = 1;
-	int intron_len_filter = 100000;
+	//int exon_len_filter = 8;
+	//int filter_mismatch = 1;
+	//int intron_len_filter = 100000;
 	for (int i=0; i<all_reads.size(); i++)
 	{
 	    if (all_reads[i]->max_intron_len()<intron_len_filter && all_reads[i]->min_exon_len()>exon_len_filter && all_reads[i]->get_mismatches()<=filter_mismatch && all_reads[i]->multiple_alignment_index==0)
@@ -177,6 +183,7 @@ void Region::compute_intron_list()
 		intron_list.push_back(intr);
 	}
 	printf("found %i introns\n", (int) intron_list.size());
+	
 	// sort by intron start
 	sort(intron_list.begin(), intron_list.end());
 
@@ -212,6 +219,26 @@ void Region::compute_intron_list()
 		}
 	}
 	printf("found %i unique introns\n", (int) unique_introns.size());
+
+#ifdef READ_DEBUG
+	//check unique list
+	printf("DEBUG: Check 'unique introns'-list contains all introns\n");
+	int idx = 0;
+	for (int i=0; i<intron_list.size(); i++)
+	{
+		bool match = false;
+		while (unique_introns[idx].first<intron_list[i].first && idx<unique_introns.size())
+			idx++;
+		int idx2 = idx;
+		while (unique_introns[idx2].first==intron_list[i].first && idx2<unique_introns.size())
+		{
+			if (unique_introns[idx2].second==intron_list[i].second)
+				match = true;
+			idx2++;
+		}
+		assert(match);
+	}
+#endif
 
 	int sum = 0;
 	for (int i=0; i<intron_counts.size(); i++)

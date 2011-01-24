@@ -2,6 +2,8 @@
 #ifndef _REGION_H__
 #define _REGION_H__
 
+//#define READ_DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,11 +46,13 @@ class Region
 		/** destructor*/
 		~Region();
 
+		bool check_region(){return (start>=0 && stop<gio->contig_len(chr_num));};
+
 		void set_gio(Genome* pgio);
 	
 		void load_genomic_sequence(); 			
 
-		void get_reads(char** bam_files, int num_bam_files);
+		void get_reads(char** bam_files, int num_bam_files, int intron_len_filter, int filter_mismatch, int exon_len_filter);
 
 		void compute_coverage();
 

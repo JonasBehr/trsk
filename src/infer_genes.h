@@ -22,7 +22,7 @@ class InferGenes
 
 	private:
 		int find_next_intron(int idx, Region* region);
-		int find_previous_intron(int idx, Region* region);
+		int find_previous_intron(int idx, Region* region, bool verb);
 		int score_cand_intron(int idx, Region* region);
 		int score_cand_exon(segment exon, Region* region);
 		segment find_terminal_exon(segment exon, Region* region);
@@ -30,6 +30,12 @@ class InferGenes
 		void find_intergenic_region(Region* region, Gene* gene);
 		vector<segment>* greedy_extend(int intron_idx, Region* region, bool* intron_used);
 		float mean(uint32_t* arr, int from, int to);
+		bool check_segment(segment seg, Region* region);
 		
+		//statistics: 
+		int no_upstream_intron; 
+		int no_upstream_intron_reject; 
+		int no_downstream_intron; 
+		int no_downstream_intron_reject; 
 };
 #endif

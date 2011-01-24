@@ -8,36 +8,45 @@ Config::Config()
 	default_values();
 }
 void Config::default_values()
-{
+{	
+	max_intron_len = 20000;
+	mm_filter = 1;
+	el_filter = 8;
+
 	max_exon_len = 8000;
-	max_intron_len = 30000;
 	min_exon_len = 10;
+	exon_mean = 5;
+	exon_term_thresh = 3;
+	exon_drop = 5;
+	exon_cut = 3;
+	intron_conf = 1;
+	intron_dist = 0;
+	intron_seed_conf = 3;
+	reject_retained_introns = false;
+
+	find_orf = true;
+	min_orf_len = 300;
+	min_orf_sep = 0.7;
+
+	region_rel_length = 0.25;
 	min_intergenic_len = 50;
 	max_intergenic_len = 20000;
 	intergenic_win = 100;
-	exon_cut = 3;
 	strand_specific = false;
-	region_rel_length = 0.25;
+
 	have_bam_file = false;
 	have_gio_file = false;
 	have_reg_file = false; 
 	have_gff_file = false;
-	find_orf = true;
-	min_orf_len = 300;
-	min_orf_sep = 0.7;
-	intron_conf = 1;
-	intron_seed_conf = 3;
+
 }
 int Config::parseCommandLine(int argc, char *argv[])
 {
-    int i;
-    char not_defined;
-    char has_index = 0;
-    char has_genome = 0;
+    bool not_defined;
 
-    for (i = 1; i < argc; i++) 
+    for (int i = 1; i < argc; i++) 
 	{
-        not_defined = 1;
+        not_defined = true;
 
         if (strcmp(argv[i], "-maxel") == 0) 
 		{
@@ -51,6 +60,32 @@ int Config::parseCommandLine(int argc, char *argv[])
             }
 			i++; 
 			max_exon_len = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-mm") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -mm\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			mm_filter = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-el") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -el\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			el_filter = atoi(argv[i]);
 		}
         else if (strcmp(argv[i], "-maxin") == 0) 
 		{
@@ -91,6 +126,19 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			intron_conf = atoi(argv[i]);
 		}
+        else if (strcmp(argv[i], "-indt") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -indt\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			intron_dist = atoi(argv[i]);
+		}
         else if (strcmp(argv[i], "-inscf") == 0) 
 		{
 
@@ -104,6 +152,45 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			intron_seed_conf = atoi(argv[i]);
 		}
+        else if (strcmp(argv[i], "-exm") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -exm\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			exon_mean = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-exts") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -exts\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			exon_term_thresh = atoi(argv[i]);
+		}
+        else if (strcmp(argv[i], "-exd") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -exd\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			exon_drop = atoi(argv[i]);
+		}
         else if (strcmp(argv[i], "-excut") == 0) 
 		{
 
@@ -116,6 +203,12 @@ int Config::parseCommandLine(int argc, char *argv[])
             }
 			i++; 
 			exon_cut = atoi(argv[i]);
+		}
+		else if (strcmp(argv[i], "-ri") == 0) 
+		{
+
+            not_defined = 0;
+			reject_retained_introns = true;
 		}
         else if (strcmp(argv[i], "-iw") == 0) 
 		{
@@ -271,6 +364,13 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			gff_file = argv[i];
 			have_gff_file = true;
+		}
+
+		if (not_defined)
+		{
+			fprintf(stderr, "ERROR: unknown argument %s\n", argv[i]) ;
+			print(stdout);
+			exit(1);
 		}
 	}
 }

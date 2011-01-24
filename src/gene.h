@@ -51,6 +51,8 @@ class Gene: public Region
 		int intergenic_region_start;
 		int intergenic_region_stop;
 
+		bool is_coding(){return cds_exons.size()>0;};
+	
 		void find_orf(int min_len, float separation);
 		void get_mRNA_seq(char** seq, int* len);
 		int map_rna_to_dna(int rna_pos);
