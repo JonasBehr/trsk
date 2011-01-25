@@ -509,7 +509,7 @@ int InferGenes::run_infer_genes()
 	conf->print(stdout);
 
 	vector<Gene*> genes;
-	//for (int r=40; r<41; r++)
+	//for (int r=0; r<2; r++)
 	for (int r=0; r<regions.size(); r++)
 	{
 		printf("Starting with contig %s, strand %c\n", regions[r]->get_region_str(), regions[r]->strand);
@@ -533,6 +533,8 @@ int InferGenes::run_infer_genes()
 	}
 
 	FILE* gff_fd = fopen(conf->gff_file, "w"); 
+    //TODO set from config file
+	FILE* tis_fd = fopen("/fml/ag-raetsch/home/cwidmer/svn/projects/transcript_skimmer/src/tis.flat", "w"); 
 	int coding_cnt = 0;
 	int non_coding_cnt = 0;
 	for (int r=0; r<genes.size(); r++)
@@ -544,10 +546,20 @@ int InferGenes::run_infer_genes()
 		else
 			non_coding_cnt++;
 		genes[r]->print_gff3(gff_fd, r+1);
+    	genes[r]->generate_tis_labels(tis_fd);
 		delete genes[r];
 	}
 	fclose(gff_fd);
-
+    
+    /*
+	if (true)
+	{
+		//FILE* reg_fd = fopen(conf->reg_file, "w"); 
+		for (int r=0; r<genes.size(); r++)
+			genes[r]->generate_tis_labels(stdin);
+		//fclose(reg_fd);
+	}
+    */
 	printf("statistics:\n"); 
 	printf("\tfound %i genes (%i coding, %i non-coding)\n\n", (int) genes.size(), coding_cnt, non_coding_cnt);
 	printf("\tno upstream intron: %i\n", no_upstream_intron);

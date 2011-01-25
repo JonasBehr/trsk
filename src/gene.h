@@ -81,6 +81,7 @@ class Gene: public Region
 				fprintf(fd, "\t\t%i\t%i\n", utr3exons[i].first, utr3exons[i].second);
 
 		};
+
 		void print_gff3(_IO_FILE*& fd, int gene_no)
 		{
 			const char* source = "TranscriptSkimmer";
@@ -125,6 +126,17 @@ class Gene: public Region
 			}
 
 		}
+
+        void write_window(_IO_FILE*& fd, int center_pos, int left_offset, int right_offset, int label);
+
+		void generate_tis_labels(_IO_FILE*& fd);
+
+        int get_length()
+        {
+            return stop-start+1;
+        };
+
+
 };
 
 #endif

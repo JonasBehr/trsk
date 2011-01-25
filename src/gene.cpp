@@ -221,3 +221,86 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 
 	delete sseq;
 }
+
+
+void Gene::write_window(_IO_FILE*& fd, int center_pos, int left_offset, int right_offset, int label)
+{
+
+    // calculate window coordinates
+    int window_start = center_pos - left_offset;
+    int window_stop = center_pos + right_offset;
+
+    // check bounds
+    if (window_start >= 0 && window_stop < get_length()) 
+    {
+        // extract string
+        string window = string(seq + window_start, window_stop - window_start);
+
+        // write to file
+        fprintf(fd, "%s %i %c\n", window.c_str(), label, strand);
+    }
+
+}
+
+
+void Gene::generate_tis_labels(_IO_FILE*& fd)
+{
+
+    int left_offset = 0;
+    int right_offset = 100;
+
+    if (cds_exons.size() == 0) 
+    {
+        //printf("warning: cds_exons size is 0\n");
+        return;
+    }
+
+    if (!seq)
+    {   
+        //printf("warning: seq not set, loading\n");
+        this->load_genomic_sequence();
+    }
+
+
+    // find actual TIS
+    int actual_tis_pos = 0;
+
+    // deal with strand weirdness
+    if (strand=='+') 
+    {
+        actual_tis_pos = cds_exons[0].first - start - 1;
+    } 
+    else
+    {
+        //TODO fix bug
+        actual_tis_pos = cds_exons.back().first - stop + 1;
+    }
+
+    // create motif    
+    vector<string*> tis_cons; 
+    tis_cons.push_back(new string("atg", 3));
+
+    // write positive sequence
+    //bool success = write_window(fd, actual_tis_pos, left_offset, right_offset, 1);
+    write_window(fd, actual_tis_pos, left_offset, right_offset, 1);
+
+
+    // find negative examples
+    for (int i=0; i!=get_length()-5; i++)
+    {
+
+        if (GeneTools::check_consensus(i, seq, get_length()-1, tis_cons))
+        {
+
+            // accept, if it is not the positive example
+            if (i != actual_tis_pos)
+            {
+                write_window(fd, i, left_offset, right_offset, -1);
+            }
+
+        }
+
+    }
+
+}
+
