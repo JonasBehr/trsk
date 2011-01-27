@@ -7,7 +7,7 @@
 #include "gene.h"
 #include "gene_tools.h"
 
-bool GeneTools::check_consensus(int pos, char* seq, int len, vector<string*> motifs)
+bool GeneTools::check_consensus(int pos, const char* seq, int len, vector<string*> motifs)
 {
 	
     bool match = false;

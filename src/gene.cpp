@@ -223,7 +223,7 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 }
 
 
-void Gene::write_window(_IO_FILE*& fd, int center_pos, int left_offset, int right_offset, int label)
+void Gene::write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_offset, int right_offset, int label)
 {
 
     // calculate window coordinates
@@ -234,7 +234,8 @@ void Gene::write_window(_IO_FILE*& fd, int center_pos, int left_offset, int righ
     if (window_start >= 0 && window_stop < get_length()) 
     {
         // extract string
-        string window = string(seq + window_start, window_stop - window_start);
+        //string window = string(tmp_seq.begin() + window_start, tmp_seq.begin() + window_stop);
+        string window = tmp_seq.substr(window_start, window_stop - window_start);
 
         // write to file
         fprintf(fd, "%s %i %c\n", window.c_str(), label, strand);
@@ -247,7 +248,7 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
 {
 
     int left_offset = 0;
-    int right_offset = 100;
+    int right_offset = 5;
 
     if (cds_exons.size() == 0) 
     {
@@ -265,6 +266,10 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
     // find actual TIS
     int actual_tis_pos = 0;
 
+    // create copy
+    string tmp_seq = string(seq, get_length());
+
+
     // deal with strand weirdness
     if (strand=='+') 
     {
@@ -272,8 +277,12 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
     } 
     else
     {
-        //TODO fix bug
-        actual_tis_pos = cds_exons.back().first - stop + 1;
+        // reverve complement
+		reverse(tmp_seq.begin(),(tmp_seq.end()));
+
+		gio->complement((char*) tmp_seq.c_str(), get_length());
+
+        actual_tis_pos = stop - cds_exons.back().second + 1;
     }
 
     // create motif    
@@ -282,20 +291,21 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
 
     // write positive sequence
     //bool success = write_window(fd, actual_tis_pos, left_offset, right_offset, 1);
-    write_window(fd, actual_tis_pos, left_offset, right_offset, 1);
+    write_window(fd, tmp_seq, actual_tis_pos, left_offset, right_offset, 1);
 
 
     // find negative examples
+    // TODO: only on the positive strand?!
     for (int i=0; i!=get_length()-5; i++)
     {
 
-        if (GeneTools::check_consensus(i, seq, get_length()-1, tis_cons))
+        if (GeneTools::check_consensus(i, tmp_seq.c_str(), get_length()-1, tis_cons))
         {
 
             // accept, if it is not the positive example
             if (i != actual_tis_pos)
             {
-                write_window(fd, i, left_offset, right_offset, -1);
+                write_window(fd, tmp_seq, i, left_offset, right_offset, -1);
             }
 
         }

@@ -127,14 +127,14 @@ class Gene: public Region
 
 		}
 
-        void write_window(_IO_FILE*& fd, int center_pos, int left_offset, int right_offset, int label);
+        void write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_offset, int right_offset, int label);
 
 		void generate_tis_labels(_IO_FILE*& fd);
 
         int get_length()
         {
             return stop-start+1;
-        };
+        }
 
 
 };
