@@ -258,12 +258,7 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
         return;
     }
 
-    if (!seq)
-    {   
-        //printf("warning: seq not set, loading\n");
-        this->load_genomic_sequence();
-    }
-
+	char* seq = get_sequence();
 
     // find actual TIS
     int actual_tis_pos = 0;
