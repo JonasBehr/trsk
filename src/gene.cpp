@@ -225,7 +225,7 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 }
 
 
-void Gene::write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_offset, int right_offset, int label)
+bool Gene::write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_offset, int right_offset, int label)
 {
 
     // calculate window coordinates
@@ -236,26 +236,29 @@ void Gene::write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_
     if (window_start >= 0 && window_stop < get_length()) 
     {
         // extract string
-        //string window = string(tmp_seq.begin() + window_start, tmp_seq.begin() + window_stop);
         string window = tmp_seq.substr(window_start, window_stop - window_start);
 
         // write to file
         fprintf(fd, "%s %i %c\n", window.c_str(), label, strand);
+
+        return true;
     }
+
+    return false;
 
 }
 
 
-void Gene::generate_tis_labels(_IO_FILE*& fd)
+bool Gene::generate_tis_labels(_IO_FILE*& fd)
 {
 
-    int left_offset = 0;
-    int right_offset = 5;
+    int left_offset = 200;
+    int right_offset = 200;
 
-    if (cds_exons.size() == 0) 
+    if (!is_coding()) 
     {
         //printf("warning: cds_exons size is 0\n");
-        return;
+        return false;
     }
 
 	char* seq = get_sequence();
@@ -287,12 +290,12 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
     tis_cons.push_back(new string("atg", 3));
 
     // write positive sequence
-    //bool success = write_window(fd, actual_tis_pos, left_offset, right_offset, 1);
-    write_window(fd, tmp_seq, actual_tis_pos, left_offset, right_offset, 1);
+    bool success = write_window(fd, tmp_seq, actual_tis_pos, left_offset, right_offset, 1);
 
+    if (!success)
+        return false;
 
     // find negative examples
-    // TODO: only on the positive strand?!
     for (int i=0; i!=get_length()-5; i++)
     {
 
@@ -308,6 +311,8 @@ void Gene::generate_tis_labels(_IO_FILE*& fd)
         }
 
     }
+
+    return true;
 
 }
 

@@ -592,8 +592,8 @@ int InferGenes::run_infer_genes()
 	conf->print(stdout);
 
 	vector<Gene*> genes;
-	for (int r=0; r<2; r++)
-	//for (int r=0; r<regions.size(); r++)
+	//for (int r=0; r<2; r++)
+	for (int r=0; r<regions.size(); r++)
 	{
 		printf("Starting with contig %s, strand %c\n", regions[r]->get_region_str(), regions[r]->strand);
 		regions[r]->get_reads(&(conf->bam_files[0]), conf->bam_files.size(), conf->max_intron_len, conf->mm_filter, conf->el_filter);
@@ -621,6 +621,8 @@ int InferGenes::run_infer_genes()
 	int coding_cnt = 0;
 	int non_coding_cnt = 0;
 	int single = 0;
+    int num_tis_labels = 0;
+
 	for (int r=0; r<genes.size(); r++)
 	{
 		if (conf->find_orf)
@@ -636,7 +638,11 @@ int InferGenes::run_infer_genes()
 		if (genes[r]->exons.size()==1)
 			single++;
 		genes[r]->print_gff3(gff_fd, r+1);
-    	genes[r]->generate_tis_labels(tis_fd);
+
+        // create tis label, increment counter if successful
+        if (genes[r]->generate_tis_labels(tis_fd))
+            num_tis_labels++;
+
 		delete genes[r];
 	}
 	fclose(gff_fd);
@@ -660,6 +666,7 @@ int InferGenes::run_infer_genes()
 	printf("\tinitial exon reject (intron): %i\n", init_reject_intron);
 	printf("\tterminal exon reject (cov): %i\n", term_reject_cov);
 	printf("\tterminal exon reject (intron): %i\n", term_reject_intron);
+	printf("\tno generated tis labels: %i\n", num_tis_labels);
 	genes.clear();
 
 }
