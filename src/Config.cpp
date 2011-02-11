@@ -28,6 +28,8 @@ void Config::default_values()
 	find_orf = true;
 	min_orf_len = 300;
 	min_orf_sep = 0.7;
+	term_offset = 100;
+	find_single_exon_genes_orf = true;
 
 	region_rel_length = 0.25;
 	min_intergenic_len = 50;
@@ -326,7 +328,7 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			min_orf_len = atoi(argv[i]);
 		}
-		    else if (strcmp(argv[i], "-orfsep") == 0) 
+		else if (strcmp(argv[i], "-orfsep") == 0) 
 		{
 
             not_defined = 0;
@@ -339,7 +341,19 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			min_orf_sep = atof(argv[i]);
 		}
+		else if (strcmp(argv[i], "-toff") == 0) 
+		{
 
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -toff\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			term_offset = atoi(argv[i]);
+		}
 		else if (strcmp(argv[i], "-bam") == 0)
 		{
 			not_defined = 0;

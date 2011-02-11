@@ -198,11 +198,11 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
 		return exon;
 	}
 	else
-		exon.second = std::min(j+win, exon.second);
+		exon.second = std::min(j+conf->term_offset, exon.second);
 
 	float mean_cov = mean(region->coverage, exon.first, j);
 	//printf("terminal exon: mean cov: %f\n", mean_cov);
-	float mean_intron_cov = mean(region->intron_coverage, exon.second, orig_stop);
+	float mean_intron_cov = mean(region->intron_coverage, exon.second, std::min(exon.second+100, orig_stop));
 	if (exon.second-exon.first<conf->min_exon_len || mean_cov<conf->term_filter*threshold)
 	{
 		exon.second = -1;
@@ -241,10 +241,10 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
 		return exon;
 	}
 	else
-		exon.first = std::max(j-win, exon.first);
+		exon.first = std::max(j-conf->term_offset, exon.first);
 
 	float mean_cov = mean(region->coverage, j, exon.second);
-	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.first);
+	float mean_intron_cov = mean(region->intron_coverage, std::max(0, exon.first-100), exon.first);
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
 	if (exon.second-exon.first<conf->min_exon_len || mean_cov<conf->term_filter*threshold)
 	{
@@ -479,6 +479,83 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 			genes->push_back(g);
 		}
 	}
+	if (conf->find_single_exon_genes_orf)
+	{
+		segment gseq(region->start, region->stop);
+		vector<segment> exons;
+		exons.push_back(gseq);
+		Gene* dummy_gene = new Gene(&exons, region->chr_num, region->strand, region->gio);
+		char* seq;
+		int len;
+		dummy_gene->get_mRNA_seq(&seq, &len);
+		vector<int> tis; 
+		vector<int> stop;
+		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 1000);
+		for (int i=0; i<tis.size(); i++)
+		{
+			tis[i] = dummy_gene->map_rna_to_dna(tis[i]);
+			stop[i] = dummy_gene->map_rna_to_dna(stop[i]);
+		}
+		printf("found %i orfs longer than 1000\n", (int) tis.size()); 
+
+		for (int i=0; i<tis.size(); i++)
+		{
+			// define to be strand independent
+			int cds_start = std::min(tis[i], stop[i]);
+			int cds_stop = std::max(tis[i], stop[i]);
+
+			// make sure no introns are in that regions
+			int from = std::max(region->start, cds_start-1000);
+			int to = std::min(region->stop, cds_stop+1000);
+			float mean_cov = mean(region->coverage, cds_start, cds_stop);
+			float mean_intron_cov = mean(region->intron_coverage, from, to);
+			if (mean_intron_cov<1e-5 && mean_cov>10)
+			{
+				//find tss and cleave
+				segment exon(std::max(0, cds_start-conf->max_exon_len), cds_start-1);
+				exon = find_initial_exon(exon, region);
+				if (exon.first==-1)
+					continue;
+				int first = exon.first;
+				exon.first = cds_stop+1;
+				exon.second = cds_start+conf->max_exon_len;
+				exon = find_terminal_exon(exon, region);
+				if (exon.second==-1)
+					continue;
+				exon.first = first;
+
+				exons.clear();
+				exons.push_back(exon);
+				Gene* g = new Gene(&exons, region->chr_num, region->strand, region->gio);
+				find_intergenic_region(region, g);
+				genes->push_back(g);
+			}
+				
+		}
+	}
+}
+
+void InferGenes::process_gene(Gene* gene)
+{
+	// set the exon boundaries to the original place
+	// (these have been moved before to find more ORFs)
+	int minlen = conf->min_exon_len;
+
+	int end = std::max(gene->exons.back().first+minlen, gene->exons.back().second-conf->term_offset);
+	if (gene->is_coding())
+		end = std::max(end, gene->cds_exons.back().second+minlen);
+	gene->exons.back().second = end;
+
+	int start = std::min(gene->exons.front().second-minlen, gene->exons.front().first+conf->term_offset);
+	if (gene->is_coding())
+		start = std::min(start, gene->cds_exons.front().first-minlen);
+	gene->exons.front().first = start;
+
+	//update UTR exons
+	if (gene->is_coding() && gene->strand=='+')
+		gene->split_exons(gene->cds_exons.front().first-1, gene->cds_exons.back().second-4);
+	else if (gene->is_coding())
+		gene->split_exons(gene->cds_exons.back().second-4, gene->cds_exons.front().first-1);
 }
 
 int InferGenes::run_infer_genes()
@@ -543,14 +620,21 @@ int InferGenes::run_infer_genes()
 	FILE* tis_fd = fopen("/fml/ag-raetsch/home/cwidmer/svn/projects/transcript_skimmer/src/tis.flat", "w"); 
 	int coding_cnt = 0;
 	int non_coding_cnt = 0;
+	int single = 0;
 	for (int r=0; r<genes.size(); r++)
 	{
 		if (conf->find_orf)
 			genes[r]->find_orf(300, 0.7);
+
+		if (false)//move transcript start and stop back to the original place
+			process_gene(genes[r]);
+
 		if (genes[r]->is_coding())
 			coding_cnt++;
 		else
 			non_coding_cnt++;
+		if (genes[r]->exons.size()==1)
+			single++;
 		genes[r]->print_gff3(gff_fd, r+1);
     	genes[r]->generate_tis_labels(tis_fd);
 		delete genes[r];
@@ -567,7 +651,7 @@ int InferGenes::run_infer_genes()
 	}
     */
 	printf("statistics:\n"); 
-	printf("\tfound %i genes (%i coding, %i non-coding)\n\n", (int) genes.size(), coding_cnt, non_coding_cnt);
+	printf("\tfound %i genes (%i coding, %i non-coding, %i single-exon)\n\n", (int) genes.size(), coding_cnt, non_coding_cnt, single);
 	printf("\tno upstream intron: %i\n", no_upstream_intron);
 	printf("\tno upstream intron reject: %i\n", no_upstream_intron_reject);
 	printf("\tno downstream intron: %i\n", no_downstream_intron);

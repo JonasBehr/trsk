@@ -83,6 +83,7 @@ void Region::load_genomic_sequence()
 {
 	if (!check_region())
 	{
+		printf("load_genomic_sequence: check_region failed\n");
 		print(stderr);
 		exit(-1);
 	}

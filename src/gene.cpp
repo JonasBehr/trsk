@@ -41,14 +41,17 @@ void Gene::find_orf(int min_len, float separation)
 	//printf("stop_cons: %s\n", stop_cons.c_str()); 
 
 
-	int dna_tis = map_rna_to_dna(tis);
-	int dna_stop = map_rna_to_dna(stop);
+	int dna_tis;
+	int dna_stop;
 	if (strand=='-')
 	{
-		dna_tis = map_rna_to_dna(len-tis);
-		dna_stop = map_rna_to_dna(len-stop);
-		dna_tis-=3;//move to start of consensus
-		dna_stop-=3;
+		dna_tis = map_rna_to_dna(len-tis+1);
+		dna_stop = map_rna_to_dna(len-stop-2);
+	}
+	else
+	{
+		dna_tis = map_rna_to_dna(tis+1);
+		dna_stop = map_rna_to_dna(stop+4);
 	}
 
 	delete[] mRNA_seq;
@@ -64,10 +67,11 @@ void Gene::find_orf(int min_len, float separation)
 }
 void Gene::split_exons(int tis, int stop)
 {
+	utr5exons.clear();
+	cds_exons.clear();
+	utr3exons.clear();
 	if (strand=='+')
 	{
-		stop +=4; 
-		tis +=1;
 		for (int i=0; i<exons.size(); i++)
 		{
 			if (exons[i].second<tis)
@@ -115,8 +119,6 @@ void Gene::split_exons(int tis, int stop)
 	}
 	else if (strand=='-')
 	{
-		stop +=1; 
-		tis +=4;
 		for (int i=0; i<exons.size(); i++)
 		{
 			if (exons[i].second<stop)
@@ -192,11 +194,11 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 {
 	if (start>=stop)
 	{
+		printf("gene start >= gene stop\n");
 		print(stdout);
 	}
-	if (!seq)
-		load_genomic_sequence();
-
+	char* genome_seq = this->get_sequence();
+	
 	string* sseq = new string("");
 	for (int i=0; i<exons.size();i++)
 	{
@@ -206,7 +208,7 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 			exon_start_local = exons[i].first-start-1;
 		else if(strand=='-'&&i<exons.size()-1)
 			exon_len = exon_len-1;
-		string* exon_seq = new string(&seq[exon_start_local], exon_len);
+		string* exon_seq = new string(&genome_seq[exon_start_local], exon_len);
 		*sseq += *exon_seq;
 		delete exon_seq;
 	}

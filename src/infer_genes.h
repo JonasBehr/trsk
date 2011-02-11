@@ -21,6 +21,7 @@ class InferGenes
 		Config* conf; 
 
 	private:
+		void process_gene(Gene* gene);
 		int find_next_intron(int idx, Region* region);
 		int find_previous_intron(int idx, Region* region, bool verb);
 		int score_cand_intron(int idx, Region* region);

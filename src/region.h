@@ -24,7 +24,6 @@ class Region
 		int stop;
 		int chr_num;
 		char strand; 
-		char* seq;
 		vector<CRead*> all_reads; 
 		vector<CRead*> reads; 
 		uint32_t* coverage;
@@ -46,6 +45,13 @@ class Region
 		/** destructor*/
 		~Region();
 
+		char* get_sequence()
+		{
+			if (!seq)
+				load_genomic_sequence();
+			return seq;
+		};
+
 		bool check_region(){return (start>=0 && stop<gio->contig_len(chr_num));};
 
 		void set_gio(Genome* pgio);
@@ -63,6 +69,9 @@ class Region
 		char* get_region_str();
 
 		virtual void print(_IO_FILE*& fd);
+	
+	private: 
+		char* seq;
 
 };
 

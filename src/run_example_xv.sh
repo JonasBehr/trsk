@@ -19,7 +19,8 @@ do
 				do
 					for incut in 3 #0.0 0.25 0.5 0.75 1
 					do
-						gff_file=${base_dir}/genes-inscf$i-excut$e-exm$em-indt$id-exd$ed-tf$tf-incut${incut}_second.gff3
+						#gff_file=${base_dir}/genes-inscf$i-excut$e-exm$em-indt$id-exd$ed-tf$tf-incut${incut}_term_off.gff3
+						gff_file=/tmp/genes-inscf$i-excut$e-exm$em-indt$id-exd$ed-tf$tf-incut${incut}_term_off.gff3
 						echo $gff_file
 						options="$opt -inscf $i -excut $e -exm $em -indt $id -exd $ed -tf $tf -incut $incut"
 						time ./infer_genes -gio $gio_file -bam $bam_file -gff $gff_file $options

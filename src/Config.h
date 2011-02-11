@@ -39,6 +39,7 @@ class Config
 			fprintf(fd,"\tfind_orf (-orf/-noorf):\t\t%i\n", find_orf);
 			fprintf(fd,"\tmin_orf_len (-orflen):\t\t%i\n", min_orf_len);
 			fprintf(fd,"\tmin_orf_sep (-orfsep):\t\t%.2f\n", min_orf_sep);
+			fprintf(fd,"\tterm_offset (-toff):\t\t%i\n", term_offset);
 
 			fprintf(fd,"\nRegions:\n");
 			if (!have_reg_file)
@@ -93,6 +94,8 @@ class Config
 		bool find_orf;
 		int min_orf_len; 
 		float min_orf_sep;
+		int term_offset;// find more ORFs by setting the boundaries of the genes a bit wider
 
+		bool find_single_exon_genes_orf;
 };
 #endif

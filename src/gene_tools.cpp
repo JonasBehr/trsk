@@ -80,6 +80,44 @@ void GeneTools::find_max_orf(char* seq, int len, int* tis, int* stop, int* secon
 	delete stop_cons[1];
 	delete stop_cons[2];
 }
+void GeneTools::find_all_orfs(char* seq, int len, vector<int>* tis, vector<int>* stop, int min_len)
+{
+	vector<string*> tis_cons; 
+	tis_cons.push_back(new string("atg", 3));
+	vector<string*> stop_cons; 
+	stop_cons.push_back(new string("tag", 3));
+	stop_cons.push_back(new string("taa", 3));
+	stop_cons.push_back(new string("tga", 3));
+
+	for (int frame=0; frame<3; frame++)
+	{
+		int first_tis = -1; 
+		int first_stop = -1;
+		for (int i=frame; i<len; i+=3)
+		{
+			if (first_tis==-1 && check_consensus(i, seq, len, tis_cons))
+			{
+				first_tis = i;
+			}
+			if (first_tis!=-1 && check_consensus(i, seq, len, stop_cons))
+			{
+				first_stop = i;
+				int len = first_stop-first_tis; 
+				if (len>min_len)
+				{
+					tis->push_back(first_tis);
+					stop->push_back(first_stop); 
+				}
+				first_tis = -1;
+			}
+		}
+	}
+	delete tis_cons[0];
+	delete stop_cons[0];
+	delete stop_cons[1];
+	delete stop_cons[2];
+}
+
 vector<Region*> GeneTools::init_regions(const char* gio_fname)
 {
 	Genome* gio = new Genome(); 
@@ -92,7 +130,7 @@ vector<Region*> GeneTools::init_regions(const char* gio_fname)
 		for (int s=0; s<2; s++)
 		{
 			int start = 1; 
-			int stop = gio->contig_len(i);
+			int stop = gio->contig_len(i)-1;
 			Region* reg = new Region(start, stop, i, strands[s]);
 			reg->set_gio(gio);
 			regions.push_back(reg);

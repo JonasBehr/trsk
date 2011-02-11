@@ -6,4 +6,5 @@ gff_file=genes.gff3
 reg_file=regions.txt
 #options="-maxel 78000 -minel 10 -reglen 0.25 -maxic 10000 -ri"
 options="-maxel 7000 -minel 10 -reglen 0.25 -maxic 10000"
+echo "./infer_genes -gio $gio_file -bam $bam_file -gff $gff_file -reg $reg_file $options"
 ./infer_genes -gio $gio_file -bam $bam_file -gff $gff_file -reg $reg_file $options  
