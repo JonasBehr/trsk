@@ -29,10 +29,12 @@ class Config
 			fprintf(fd,"\texon_term_thresh (-exts):\t%i\n", exon_term_thresh);
 			fprintf(fd,"\texon_drop (-exd):\t\t%i\n", exon_drop);
 			fprintf(fd,"\texon_cut (-excut):\t\t%i\n", exon_cut);
+			fprintf(fd,"\tintron_cut (-incut):\t\t%.2f\n", intron_cut);
 			fprintf(fd,"\tintron_conf (-incf):\t\t%i\n", intron_conf);
 			fprintf(fd,"\tintron_dist (-indt):\t\t%i\n", intron_dist);
 			fprintf(fd,"\tintron_seed_conf (-inscf):\t%i\n", intron_seed_conf);
 			fprintf(fd,"\treject_retained_introns (-ri):\t%i\n", reject_retained_introns);
+			fprintf(fd,"\tterm_filter (-tf):\t\t%.2f\n", term_filter);
 			fprintf(fd,"\nORF:\n");
 			fprintf(fd,"\tfind_orf (-orf/-noorf):\t\t%i\n", find_orf);
 			fprintf(fd,"\tmin_orf_len (-orflen):\t\t%i\n", min_orf_len);
@@ -58,6 +60,7 @@ class Config
 		int intron_dist;
 		int intron_seed_conf;
 		bool reject_retained_introns;
+		float term_filter;
 		int mm_filter; 
 		int el_filter;
 
@@ -68,6 +71,7 @@ class Config
 		int exon_term_thresh;
 		int exon_drop;
 		int exon_cut;
+		float intron_cut;
 
 		/** determines how long intergenic regions are 
 		 *	relative to the next observed island of coverage

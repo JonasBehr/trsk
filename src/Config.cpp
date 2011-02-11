@@ -23,6 +23,7 @@ void Config::default_values()
 	intron_dist = 0;
 	intron_seed_conf = 3;
 	reject_retained_introns = false;
+	term_filter = 2.0;
 
 	find_orf = true;
 	min_orf_len = 300;
@@ -204,11 +205,37 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			exon_cut = atoi(argv[i]);
 		}
+		else if (strcmp(argv[i], "-incut") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -incut\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			intron_cut = atof(argv[i]);
+		}
 		else if (strcmp(argv[i], "-ri") == 0) 
 		{
 
             not_defined = 0;
 			reject_retained_introns = true;
+		}
+		else if (strcmp(argv[i], "-tf") == 0) 
+		{
+
+            not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -tf\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			term_filter = atof(argv[i]);
 		}
         else if (strcmp(argv[i], "-iw") == 0) 
 		{

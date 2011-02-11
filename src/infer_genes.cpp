@@ -193,19 +193,22 @@ segment InferGenes::find_terminal_exon(segment exon, Region* region)
             break;
 	}
 	if (j >= exon.second-win-1) // stop conditions never met
+	{
 		exon.second = -1;
+		return exon;
+	}
 	else
-		exon.second = std::min(j+3*win, exon.second);
+		exon.second = std::min(j+win, exon.second);
 
-	float mean_cov = mean(region->coverage, exon.first, exon.second);
+	float mean_cov = mean(region->coverage, exon.first, j);
 	//printf("terminal exon: mean cov: %f\n", mean_cov);
-	float mean_intron_cov = mean(region->intron_coverage, exon.first, orig_stop);
-	if (exon.second-exon.first<conf->min_exon_len || mean_cov<2*threshold)
+	float mean_intron_cov = mean(region->intron_coverage, exon.second, orig_stop);
+	if (exon.second-exon.first<conf->min_exon_len || mean_cov<conf->term_filter*threshold)
 	{
 		exon.second = -1;
 		term_reject_cov++;
 	}
-	if (mean_intron_cov>1)//gene is likely to be cut
+	if (mean_intron_cov>conf->intron_cut)//gene is likely to be cut
 	{
 		exon.second = -1;
 		term_reject_intron++;
@@ -233,19 +236,22 @@ segment InferGenes::find_initial_exon(segment exon, Region* region)
             break;
 	}
 	if (j <= exon.first+win) // stop conditions never met
+	{
 		exon.first = -1;
+		return exon;
+	}
 	else
-		exon.first = std::max(j-3*win, exon.first);
+		exon.first = std::max(j-win, exon.first);
 
-	float mean_cov = mean(region->coverage, exon.first, exon.second);
-	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.second);
+	float mean_cov = mean(region->coverage, j, exon.second);
+	float mean_intron_cov = mean(region->intron_coverage, orig_start, exon.first);
 	//printf("initial exon[%i, %i]: mean cov: %f\n\n", exon.first, exon.second, mean_cov);
-	if (exon.second-exon.first<conf->min_exon_len || mean_cov<2*threshold)
+	if (exon.second-exon.first<conf->min_exon_len || mean_cov<conf->term_filter*threshold)
 	{
 		exon.first = -1;
 		init_reject_cov++;
 	}
-	if (mean_intron_cov>1)//gene is likely to be cut
+	if (mean_intron_cov>conf->intron_cut)//gene is likely to be cut
 	{
 		exon.first = -1;
 		init_reject_intron++;
