@@ -42,6 +42,9 @@ void Config::default_values()
 	have_reg_file = false; 
 	have_gff_file = false;
 
+    have_tss_seq_file = false;
+    have_tis_seq_file = false; 
+
 }
 int Config::parseCommandLine(int argc, char *argv[])
 {
@@ -379,6 +382,32 @@ int Config::parseCommandLine(int argc, char *argv[])
 			i++; 
 			gio_file = argv[i];
 			have_gio_file = true;
+		}
+		else if (strcmp(argv[i], "-tss") == 0)
+		{
+			not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -tss\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			tss_seq_file = argv[i];
+			have_tss_seq_file = true;
+		}
+		else if (strcmp(argv[i], "-tis") == 0)
+		{
+			not_defined = 0;
+            if (i + 1 > argc - 1) 
+			{
+                fprintf(stderr, "ERROR: Argument missing for option -tis\n") ;
+               //usage();
+                exit(1);
+            }
+			i++; 
+			tis_seq_file = argv[i];
+			have_tis_seq_file = true;
 		}
 		else if (strcmp(argv[i], "-reg") == 0)
 		{

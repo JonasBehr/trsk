@@ -83,10 +83,15 @@ class Config
 		char* gio_file;
 		char* gff_file;
 		char* reg_file; 
+		char* tis_seq_file; 
+		char* tss_seq_file;
+
 		bool have_bam_file;
 		bool have_gio_file;
 		bool have_reg_file; 
 		bool have_gff_file;
+		bool have_tis_seq_file;
+		bool have_tss_seq_file;
 		
 		bool strand_specific; 
 

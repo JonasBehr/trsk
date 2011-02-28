@@ -602,9 +602,14 @@ int InferGenes::run_infer_genes()
 		regions[r]->compute_intron_coverage();
 
 		infer_genes(regions[r], &genes);
-		printf("found %i genes\n", (int) genes.size()); 
+		printf("found %i genes\n", (int) genes.size());
+
+        // write seqs
+        //...
+
 		delete regions[r];
 	}
+
 	regions.clear();
 
 	if (conf->have_reg_file)
