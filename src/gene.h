@@ -131,6 +131,8 @@ class Gene: public Region
 
 		bool generate_tis_labels(_IO_FILE*& fd);
 
+		bool generate_tss_labels(_IO_FILE*& fd);
+
         int get_length()
         {
             return stop-start+1;

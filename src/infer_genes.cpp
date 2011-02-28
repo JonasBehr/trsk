@@ -592,8 +592,9 @@ int InferGenes::run_infer_genes()
 	conf->print(stdout);
 
 	vector<Gene*> genes;
-	//for (int r=0; r<2; r++)
-	for (int r=0; r<regions.size(); r++)
+
+	for (int r=0; r<2; r++)
+	//for (int r=0; r<regions.size(); r++)
 	{
 		printf("Starting with contig %s, strand %c\n", regions[r]->get_region_str(), regions[r]->strand);
 		regions[r]->get_reads(&(conf->bam_files[0]), conf->bam_files.size(), conf->max_intron_len, conf->mm_filter, conf->el_filter);
@@ -604,8 +605,6 @@ int InferGenes::run_infer_genes()
 		infer_genes(regions[r], &genes);
 		printf("found %i genes\n", (int) genes.size());
 
-        // write seqs
-        //...
 
 		delete regions[r];
 	}
@@ -620,13 +619,53 @@ int InferGenes::run_infer_genes()
 		fclose(reg_fd);
 	}
 
+    
+    // ++++++++ handle tss ++++++++++
+    if (conf->have_tss_seq_file)
+    {
+		fprintf(stdout, "creating tss seq file!\n");
+
+        int num_tss_labels = 0;
+	    FILE* tss_fd = fopen(conf->tss_seq_file, "w"); 
+
+        for (int r=0; r<genes.size(); r++)
+        {
+            if (genes[r]->generate_tss_labels(tss_fd))
+                num_tss_labels++;
+
+        }
+
+	    fclose(tss_fd);
+	}
+    
+    
+    // ++++++++ handle tis ++++++++++
+    if (conf->have_tis_seq_file)
+    {
+		fprintf(stdout, "creating tis seq file!\n");
+
+        int num_tis_labels = 0;
+	    FILE* tis_fd = fopen(conf->tis_seq_file, "w"); 
+
+        for (int r=0; r<genes.size(); r++)
+        {
+            if (genes[r]->generate_tis_labels(tis_fd))
+                num_tis_labels++;
+
+        }
+
+	    fclose(tis_fd);
+	}
+    
+
+    // ++++++++ handle rest ++++++++++
+
 	FILE* gff_fd = fopen(conf->gff_file, "w"); 
-    //TODO set from config file
-	FILE* tis_fd = fopen("/fml/ag-raetsch/home/cwidmer/svn/projects/transcript_skimmer/src/tis.flat", "w"); 
 	int coding_cnt = 0;
 	int non_coding_cnt = 0;
 	int single = 0;
     int num_tis_labels = 0;
+    
 
 	for (int r=0; r<genes.size(); r++)
 	{
@@ -643,10 +682,6 @@ int InferGenes::run_infer_genes()
 		if (genes[r]->exons.size()==1)
 			single++;
 		genes[r]->print_gff3(gff_fd, r+1);
-
-        // create tis label, increment counter if successful
-        if (genes[r]->generate_tis_labels(tis_fd))
-            num_tis_labels++;
 
 		delete genes[r];
 	}

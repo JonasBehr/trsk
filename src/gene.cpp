@@ -316,3 +316,84 @@ bool Gene::generate_tis_labels(_IO_FILE*& fd)
 
 }
 
+
+bool Gene::generate_tss_labels(_IO_FILE*& fd)
+{
+
+    //TODO CHECK BOUNDARIES!!
+
+    int left_offset = 200;
+    int right_offset = 200;
+
+    // init coordinates
+    int tss_pos = 0;
+    int left = 0;
+    int right = 0;
+	char* seq;
+
+
+    // find actual TIS
+    int actual_tis_pos = 0;
+
+    // create copy
+    //string tmp_seq = string(seq, get_length());
+
+
+    // deal with negative strand
+    if (strand=='+') 
+    {
+        tss_pos = exons[0].first - 1;
+        
+        left = tss_pos - left_offset;
+        right = tss_pos + right_offset;
+
+    	seq = gio->read_flat_file(chr_num, left, right);
+    } 
+    else
+    {
+        // reverve complement
+        tss_pos = exons.back().second + 1;
+        
+        left = tss_pos - right_offset;
+        right = tss_pos + left_offset;
+
+        int str_len = right - left;
+    
+    	seq = gio->read_flat_file(chr_num, left, right);
+		reverse(seq,seq+str_len);
+
+		gio->complement(seq, str_len);
+
+        //actual_tis_pos = stop - cds_exons.back().second + 1;
+    }
+
+
+    int label = 1.0;   
+ 
+    // write to file
+    fprintf(fd, "%s %i %c\n", seq, label, strand);
+
+    return true;
+   
+    /*
+    // find negative examples
+    for (int i=0; i!=get_length()-5; i++)
+    {
+
+        if (GeneTools::check_consensus(i, tmp_seq.c_str(), get_length()-1, tss_cons))
+        {
+
+            // accept, if it is not the positive example
+            if (i != actual_tss_pos)
+            {
+                write_window(fd, tmp_seq, i, left_offset, right_offset, -1);
+            }
+
+        }
+
+    }
+    return true;
+    */
+
+}
+

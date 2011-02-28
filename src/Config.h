@@ -49,6 +49,12 @@ class Config
 			fprintf(fd,"\tmax_intergenic_len (-maxic):\t%i\n", max_intergenic_len);
 			fprintf(fd,"\tintergenic_win (-iwin):\t\t%i\n", intergenic_win);
 			fprintf(fd,"\tstrand_specific (-ss/-nss):\t%i\n", strand_specific);
+
+			fprintf(fd,"\nSignals:\n");
+			if (have_tss_seq_file)
+				fprintf(fd,"\ttss sequence file: %s\n", tss_seq_file);
+			if (have_tis_seq_file)
+				fprintf(fd,"\ttis sequence file: %s\n", tis_seq_file);
 			fprintf(fd,"\n");
 		};
 		int max_exon_len;
