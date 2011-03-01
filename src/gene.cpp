@@ -261,13 +261,11 @@ bool Gene::generate_tis_labels(_IO_FILE*& fd)
         return false;
     }
 
-	char* seq = get_sequence();
-
     // find actual TIS
     int actual_tis_pos = 0;
 
     // create copy
-    string tmp_seq = string(seq, get_length());
+    string tmp_seq = string(get_sequence(), get_length());
 
 
     // deal with strand weirdness

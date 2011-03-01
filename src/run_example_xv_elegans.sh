@@ -5,7 +5,8 @@ gio_file=/fml/ag-raetsch/share/projects/rgasp/genomes/elegans/elegans.gio/genome
 
 mkdir $base_dir
 
-opt="-maxin 20000 -maxel 8000 -ss"
+#opt="-maxin 20000 -maxel 8000 -ss"
+opt="-maxin 20000 -maxel 8000 -ss -reglen 0.66 -maxic 10000"
 
 #for bam in ".best." ".";
 mm=1
@@ -24,15 +25,13 @@ do
 					#bam_file=/fml/ag-raetsch/nobackup/projects/sequencing_runs/worm-Dec09/reads/worms/elegans.5${bam}bam # mem consumption >60G
 					bam1=/fml/ag-raetsch/nobackup/projects/sequencing_runs/worm-Dec09/reads/elegans/polyA_left_sam_stranded.mapped.2.bam
 					bam2=/fml/ag-raetsch/nobackup/projects/sequencing_runs/worm-Dec09/reads/elegans/polyA_right_sam_stranded.mapped.2.bam
-					#gff_file=${base_dir}/genes-exm$exm-indt$id-exd$ed${bam}gff3
-					gff_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}_short_intron_reject.gff3
-					gff_file=/tmp/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}_short_intron_reject.gff3
-					reg_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}_short_intron_reject_region_ss.txt
+					gff_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}_new.gff3
+					reg_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}_new_regions.txt
 					echo $gff_file
 					options="$opt -mm $mm -exm $exm -indt $id -exd $ed -tf $tf -inscf $inscf -excut $excut -toff $toff"
 					#time ./infer_genes -gio $gio_file -bam $bam_file -gff $gff_file $options
-					echo $options
-					#time ./infer_genes -gio $gio_file -bam $bam1 -bam $bam2 -gff $gff_file -reg $reg_file $options 
+					#echo $options
+					time ./infer_genes -gio $gio_file -bam $bam1 -bam $bam2 -gff $gff_file -reg $reg_file $options 
 				done
 			done
 		done
