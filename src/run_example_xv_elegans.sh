@@ -29,11 +29,11 @@ do
 					bam2=/fml/ag-raetsch/nobackup/projects/sequencing_runs/worm-Dec09/reads/elegans/polyA_right_sam_stranded.mapped.2.bam
 					gff_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}-el$el-mm$mm-maxin${maxin}.gff3
 					reg_file=${base_dir}/genes-inscf$inscf-exm$exm-excut$excut-indt$id-exd$ed-tf${tf}-toff${toff}-el$el-mm$mm-maxin${maxin}_regions.txt
-					echo $gff_file
 					options="$opt -maxin $maxin -mm $mm -exm $exm -indt $id -exd $ed -tf $tf -inscf $inscf -excut $excut -toff $toff -el $el"
-					#time ./infer_genes -gio $gio_file -bam $bam_file -gff $gff_file $options
-					#echo $options
-					time ./infer_genes -gio $gio_file -bam $bam1 -bam $bam2 -gff $gff_file -reg $reg_file $options 
+					echo $options
+					#time ./infer_genes -gio $gio_file -bam $bam1 -bam $bam2 -gff $gff_file -reg $reg_file $options 
+					echo $gff_file
+					echo $reg_file
 				done
 			done
 		done

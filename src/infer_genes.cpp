@@ -490,13 +490,13 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		dummy_gene->get_mRNA_seq(&seq, &len);
 		vector<int> tis; 
 		vector<int> stop;
-		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 750);
+		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 500);
 		for (int i=0; i<tis.size(); i++)
 		{
 			tis[i] = dummy_gene->map_rna_to_dna(tis[i]);
 			stop[i] = dummy_gene->map_rna_to_dna(stop[i]);
 		}
-		printf("found %i orfs longer than 750\n", (int) tis.size()); 
+		printf("found %i orfs longer than 500\n", (int) tis.size()); 
 
 		for (int i=0; i<tis.size(); i++)
 		{
@@ -612,6 +612,7 @@ int InferGenes::run_infer_genes()
 
 	if (conf->have_reg_file)
 	{
+		printf("Write regions to file: %s\n", conf->reg_file);
 		FILE* reg_fd = fopen(conf->reg_file, "w"); 
 		for (int r=0; r<genes.size(); r++)
 			genes[r]->print_region(reg_fd);
