@@ -490,13 +490,13 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		dummy_gene->get_mRNA_seq(&seq, &len);
 		vector<int> tis; 
 		vector<int> stop;
-		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 1000);
+		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 750);
 		for (int i=0; i<tis.size(); i++)
 		{
 			tis[i] = dummy_gene->map_rna_to_dna(tis[i]);
 			stop[i] = dummy_gene->map_rna_to_dna(stop[i]);
 		}
-		printf("found %i orfs longer than 1000\n", (int) tis.size()); 
+		printf("found %i orfs longer than 750\n", (int) tis.size()); 
 
 		for (int i=0; i<tis.size(); i++)
 		{
@@ -505,11 +505,11 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 			int cds_stop = std::max(tis[i], stop[i]);
 
 			// make sure no introns are in that regions
-			int from = std::max(region->start, cds_start-1000);
-			int to = std::min(region->stop, cds_stop+1000);
+			int from = std::max(region->start, cds_start-200);
+			int to = std::min(region->stop, cds_stop+200);
 			float mean_cov = mean(region->coverage, cds_start, cds_stop);
 			float mean_intron_cov = mean(region->intron_coverage, from, to);
-			if (mean_intron_cov<1e-5 && mean_cov>10)
+			if (mean_intron_cov<1e-5 && mean_cov>3)
 			{
 				//find tss and cleave
 				segment exon(std::max(0, cds_start-conf->max_exon_len), cds_start-1);
