@@ -143,15 +143,20 @@ vector<Region*> GeneTools::init_regions(const char* gio_fname)
 	return regions;
 }
 
-bool GeneTools::write_tss_labels(vector<Gene*>* genes, Region* region, char* dirname)
+bool GeneTools::write_signal_labels(const char* signal_flag, vector<Gene*>* genes, Region* region, char* dirname)
 {
 	vector<example_t> examples;
 	for (int r=0; r<genes->size(); r++)
 	{
 		if (genes->at(r)->chr_num==region->chr_num&&genes->at(r)->strand==region->strand)
-			genes->at(r)->generate_tss_labels(&examples);
+		{
+			if (strcmp(signal_flag, "tss") == 0)
+				genes->at(r)->generate_tss_labels(&examples);
+			else if (strcmp(signal_flag, "tis") == 0)
+				genes->at(r)->generate_tis_labels(&examples);
+		}
 	}
-	printf("got %i tss labels\n", (int) examples.size());
+	printf("got %i %s labels\n", (int) examples.size(), signal_flag);
 
 	// sort training examples by position
 	sort(examples.begin(), examples.end(), exp_compare);

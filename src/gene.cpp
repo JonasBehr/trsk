@@ -250,70 +250,72 @@ bool Gene::write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_
 }
 
 
-//bool Gene::generate_tis_labels(vector<int>* pos, vector<int>* label)
-//{
-//
-//    int left_offset = 200;
-//    int right_offset = 200;
-//
-//    if (!is_coding()) 
-//    {
-//        //printf("warning: cds_exons size is 0\n");
-//        return false;
-//    }
-//
-//    // find actual TIS
-//    int actual_tis_pos = 0;
-//
-//    // create copy
-//    string tmp_seq = string(get_sequence(), get_length());
-//
-//
-//    // deal with strand weirdness
-//    if (strand=='+') 
-//    {
-//        actual_tis_pos = cds_exons[0].first - start - 1;
-//    } 
-//    else
-//    {
-//        // reverve complement
-//		reverse(tmp_seq.begin(),(tmp_seq.end()));
-//
-//		gio->complement((char*) tmp_seq.c_str(), get_length());
-//
-//        actual_tis_pos = stop - cds_exons.back().second + 1;
-//    }
-//
-//    // create motif    
-//    vector<string*> tis_cons; 
-//    tis_cons.push_back(new string("atg", 3));
-//
-//    // write positive sequence
-//    bool success = write_window(fd, tmp_seq, actual_tis_pos, left_offset, right_offset, 1);
-//
-//    if (!success)
-//        return false;
-//
-//    // find negative examples
-//    for (int i=0; i!=get_length()-5; i++)
-//    {
-//
-//        if (GeneTools::check_consensus(i, tmp_seq.c_str(), get_length()-1, tis_cons))
-//        {
-//
-//            // accept, if it is not the positive example
-//            if (i != actual_tis_pos)
-//            {
-//                write_window(fd, tmp_seq, i, left_offset, right_offset, -1);
-//            }
-//
-//        }
-//
-//    }
-//
-//    return true;
-//
-//}
+bool Gene::generate_tis_labels(vector<example_t>* examples)
+{
+
+    if (!is_coding()) 
+    {
+        return false;
+    }
+	char* tmp_seq = this->get_sequence();
+
+    // find actual TIS
+    int tis_pos = 0;
+    int local_tis_pos = 0;
+
+    // deal with strand weirdness
+    if (strand=='+') 
+    {
+        tis_pos = cds_exons[0].first;
+        local_tis_pos = cds_exons[0].first - start - 1;
+    } 
+    else
+    {
+        tis_pos = cds_exons.back().second;
+        local_tis_pos = stop - cds_exons.back().second + 1;
+
+		reverse(tmp_seq, tmp_seq+get_length());
+		gio->complement(tmp_seq, get_length());
+    }
+
+	example_t exm;
+	exm.pos = tis_pos;
+	exm.label = 1;
+	examples->push_back(exm);
+
+
+    // create motif    
+    vector<string*> tis_cons; 
+    tis_cons.push_back(new string("atg", 3));
+
+	assert(GeneTools::check_consensus(local_tis_pos, tmp_seq, get_length()-1, tis_cons));
+	if (false)
+	{
+		printf("tis:");
+		for (int i=-3;i<4;i++)
+			printf(" %i:%i",i, GeneTools::check_consensus(local_tis_pos+i, tmp_seq, get_length()-1, tis_cons));
+		printf("\n");
+	}
+
+    // find negative examples
+    for (int i=0; i!=get_length()-5; i++)
+    {
+        if (GeneTools::check_consensus(i, tmp_seq, get_length()-1, tis_cons))
+        {
+            // accept, if it is not the positive example
+            if (i != tis_pos)
+            {
+				if (strand=='+')
+					exm.pos = i+start+1;
+				else
+					exm.pos = stop-i+1;
+				exm.label = -1;
+				examples->push_back(exm);
+            }
+        }
+    }
+    return true;
+}
 
 
 bool Gene::generate_tss_labels(vector<example_t>* examples)

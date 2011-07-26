@@ -604,12 +604,6 @@ int InferGenes::run_infer_genes()
 		infer_genes(regions[r], &genes);
 		printf("found %i genes\n", (int) genes.size());
 
-	    // ++++++++ handle tss ++++++++++
-	    if (conf->have_tss_seq_file)
-	    {
-			GeneTools::write_tss_labels(&genes, regions[r], conf->tss_seq_file);
-		}
-
 		delete regions[r];
 	}
 
@@ -625,29 +619,6 @@ int InferGenes::run_infer_genes()
 	}
 
     
-    
-    
-    // ++++++++ handle tis ++++++++++
-//    if (conf->have_tis_seq_file)
-//    {
-//		fprintf(stdout, "creating tis seq file!\n");
-//
-//        int num_tis_labels = 0;
-//	    FILE* tis_fd = fopen(conf->tis_seq_file, "w"); 
-//
-//        for (int r=0; r<genes.size(); r++)
-//        {
-//            if (genes[r]->generate_tis_labels(tis_fd))
-//                num_tis_labels++;
-//
-//        }
-//
-//	    fclose(tis_fd);
-//	}
-    
-
-    // ++++++++ handle rest ++++++++++
-
 	FILE* gff_fd = fopen(conf->gff_file, "w"); 
 	int coding_cnt = 0;
 	int non_coding_cnt = 0;
@@ -670,11 +641,25 @@ int InferGenes::run_infer_genes()
 		if (genes[r]->exons.size()==1)
 			single++;
 		genes[r]->print_gff3(gff_fd, r+1);
-
-		delete genes[r];
 	}
 	fclose(gff_fd);
     
+	// init regions again to write label files for each contig
+	regions = GeneTools::init_regions(conf->gio_file);
+	printf("regions.size(): %i\n", (int) regions.size());
+	for (int r=0; r<regions.size(); r++)
+	{
+	    // ++++++++ handle tss ++++++++++
+	    if (conf->have_tss_seq_file)
+			GeneTools::write_signal_labels("tss", &genes, regions[r], conf->tss_seq_file);
+	    // ++++++++ handle tis ++++++++++
+	    if (conf->have_tis_seq_file)
+			GeneTools::write_signal_labels("tis", &genes, regions[r], conf->tis_seq_file);
+
+		delete regions[r];
+	}
+	regions.clear();
+
     /*
 	if (true)
 	{
@@ -695,6 +680,11 @@ int InferGenes::run_infer_genes()
 	printf("\tterminal exon reject (cov): %i\n", term_reject_cov);
 	printf("\tterminal exon reject (intron): %i\n", term_reject_intron);
 	printf("\tno generated tis labels: %i\n", num_tis_labels);
+
+	for (int r=0; r<genes.size(); r++)
+	{
+		delete genes[r];
+	}
 	genes.clear();
 
 }

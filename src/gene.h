@@ -131,6 +131,9 @@ class Gene: public Region
         bool write_window(_IO_FILE*& fd, string tmp_seq, int center_pos, int left_offset, int right_offset, int label);
 
 		bool generate_tss_labels(vector<example_t>* examples);
+		bool generate_tis_labels(vector<example_t>* examples);
+		bool generate_stp_labels(vector<example_t>* examples);
+		bool generate_clv_labels(vector<example_t>* examples);
 
         int get_length()
         {
