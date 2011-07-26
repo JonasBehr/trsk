@@ -2,10 +2,14 @@
 	using std::string;
 #include <vector>
 	using std::vector;
+#include <sys/stat.h>
+#include <algorithm>
 #include "region.h"
 #include "genome.h"
 #include "gene.h"
 #include "gene_tools.h"
+#include "splice_labels_from_RNA_seq.h"
+//extern void save_score_pos(char* path_prefix, char** score_names, float** scores, int num_scores, int* pos, int num_pos);
 
 bool GeneTools::check_consensus(int pos, const char* seq, int len, vector<string*> motifs)
 {
@@ -137,4 +141,47 @@ vector<Region*> GeneTools::init_regions(const char* gio_fname)
 		}
 	}
 	return regions;
+}
+
+bool GeneTools::write_tss_labels(vector<Gene*>* genes, Region* region, char* dirname)
+{
+	vector<example_t> examples;
+	for (int r=0; r<genes->size(); r++)
+	{
+		if (genes->at(r)->chr_num==region->chr_num&&genes->at(r)->strand==region->strand)
+			genes->at(r)->generate_tss_labels(&examples);
+	}
+	printf("got %i tss labels\n", (int) examples.size());
+
+	// sort training examples by position
+	sort(examples.begin(), examples.end(), exp_compare);
+
+	char basename[1000];
+
+	sprintf(basename, "%s/contig_%i%c", dirname, region->chr_num+1, region->strand);
+	
+	// create directory
+	struct stat st;
+    if(stat(dirname,&st) != 0)
+    {   
+        if (mkdir(dirname, 01777))
+        {   
+            fprintf(stderr, "cannot create dir: %s\n", dirname);
+            exit(-1);
+        }
+    }
+
+	int* pos = new int[examples.size()];
+	float* label = new float[examples.size()];
+    for (int i=0; i<examples.size(); i++)    
+    {
+       label[i] = examples[i].label;
+       pos[i] = examples[i].pos;
+    }
+
+
+	printf("writing to file %s\n", basename);
+	char* score_name = (char*) "label";
+	save_score_pos(basename, &score_name, &label, 1, pos, examples.size());
+	return true;
 }

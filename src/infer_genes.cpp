@@ -604,6 +604,11 @@ int InferGenes::run_infer_genes()
 		infer_genes(regions[r], &genes);
 		printf("found %i genes\n", (int) genes.size());
 
+	    // ++++++++ handle tss ++++++++++
+	    if (conf->have_tss_seq_file)
+	    {
+			GeneTools::write_tss_labels(&genes, regions[r], conf->tss_seq_file);
+		}
 
 		delete regions[r];
 	}
@@ -620,42 +625,25 @@ int InferGenes::run_infer_genes()
 	}
 
     
-    // ++++++++ handle tss ++++++++++
-    if (conf->have_tss_seq_file)
-    {
-		fprintf(stdout, "creating tss seq file!\n");
-
-        int num_tss_labels = 0;
-	    FILE* tss_fd = fopen(conf->tss_seq_file, "w"); 
-
-        for (int r=0; r<genes.size(); r++)
-        {
-            if (genes[r]->generate_tss_labels(tss_fd))
-                num_tss_labels++;
-
-        }
-
-	    fclose(tss_fd);
-	}
     
     
     // ++++++++ handle tis ++++++++++
-    if (conf->have_tis_seq_file)
-    {
-		fprintf(stdout, "creating tis seq file!\n");
-
-        int num_tis_labels = 0;
-	    FILE* tis_fd = fopen(conf->tis_seq_file, "w"); 
-
-        for (int r=0; r<genes.size(); r++)
-        {
-            if (genes[r]->generate_tis_labels(tis_fd))
-                num_tis_labels++;
-
-        }
-
-	    fclose(tis_fd);
-	}
+//    if (conf->have_tis_seq_file)
+//    {
+//		fprintf(stdout, "creating tis seq file!\n");
+//
+//        int num_tis_labels = 0;
+//	    FILE* tis_fd = fopen(conf->tis_seq_file, "w"); 
+//
+//        for (int r=0; r<genes.size(); r++)
+//        {
+//            if (genes[r]->generate_tis_labels(tis_fd))
+//                num_tis_labels++;
+//
+//        }
+//
+//	    fclose(tis_fd);
+//	}
     
 
     // ++++++++ handle rest ++++++++++

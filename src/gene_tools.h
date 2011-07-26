@@ -17,5 +17,6 @@ class GeneTools
 		static void find_max_orf(char* seq, int len, int* tis, int* stop, int* second_best);
 		static void find_all_orfs(char* seq, int len, vector<int>* tis, vector<int>* stop, int min_len);
 		static vector<Region*> init_regions(const char* gio_fname);
+		static bool write_tss_labels(vector<Gene*>* genes, Region* region, char* dirname);
 };
 #endif
