@@ -212,9 +212,6 @@ void Region::compute_intron_coverage()
 
 int Region::get_intron_conf(int intron_start, int intron_stop)
 {
-	if (unique_introns.size()==0)
-		compute_intron_list();
-
 	//printf("get_intron_conf for %i -> %i\n", intron_start, intron_stop);
 	for (int i=1; i<unique_introns.size(); i++)
 	{
