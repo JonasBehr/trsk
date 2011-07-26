@@ -16,6 +16,7 @@ Region::Region()
 	stop = NULL;
 	strand = NULL;
 	chr_num = NULL;
+	chr = NULL;
 	seq = NULL;
 	coverage = NULL;
 	intron_coverage = NULL;
@@ -29,6 +30,7 @@ Region::Region(int pstart, int pstop, int pchr_num, char pstrand, const char* gi
 	stop = pstop;
 	strand = pstrand;
 	chr_num = pchr_num;
+	chr = NULL;
 	seq = NULL;
 	coverage = NULL;
 	intron_coverage = NULL;
@@ -49,11 +51,24 @@ Region::Region(int pstart, int pstop, int pchr_num, char pstrand)
 	stop = pstop;
 	strand = pstrand;
 	chr_num = pchr_num;
+	chr = NULL;
 	seq = NULL;
 	coverage = NULL;
 	intron_coverage = NULL;
 }
-
+/** constructor*/
+Region::Region(int pstart, int pstop, char* pchr, char pstrand)
+{
+	start = pstart; 
+	stop = pstop;
+	strand = pstrand;
+	chr_num = NULL;
+	chr = pchr;
+	seq = NULL;
+	coverage = NULL;
+	intron_coverage = NULL;
+	fd_out = stdout;
+}
 /** destructor*/
 Region::~Region()
 {
@@ -67,6 +82,7 @@ Region::~Region()
 	// only the pointers have to be removed
 	reads.clear(); 
 
+	delete chr;
 	delete[] coverage;
 	delete[] intron_coverage;
 	intron_list.clear();
@@ -96,20 +112,26 @@ void Region::print(_IO_FILE*& fd)
 	fprintf(fd, "region start:\t%i\n", start);
 	fprintf(fd, "region stop:\t%i\n", stop);
 	fprintf(fd, "region strand:\t%c\n", strand);
-	fprintf(fd, "region chr_num:\t%i\n", chr_num);
-	if (gio)
+	if (chr_num)
+		fprintf(fd, "region chr_num:\t%i\n", chr_num);
+	if (gio && chr_num)
 		fprintf(fd, "region chr:\t%s\n", gio->get_contig_name(chr_num));
+	else if (chr)
+		fprintf(fd, "region chr:\t%s\n", chr);
 }
 
 char* Region::get_region_str()
 {
 	char* reg_str = new char[1000];
-	if (!gio)
+	if (!gio && !chr)
 	{
 		fprintf(stderr, "genome information object not set");
 		exit(-1);
 	}
-	sprintf(reg_str, "%s:%i-%i", gio->get_contig_name(chr_num), start, stop);
+	if (gio && chr_num)
+		sprintf(reg_str, "%s:%i-%i", gio->get_contig_name(chr_num), start, stop);
+	else if (chr)
+		sprintf(reg_str, "%s:%i-%i", chr, start, stop);
 	return reg_str;
 }
 
@@ -120,11 +142,11 @@ void Region::get_reads(char** bam_files, int num_bam_files, int intron_len_filte
 	for (int i=0; i<num_bam_files; i++)
 	{
     	char* fn_bam = bam_files[i];
-	    fprintf(stdout, "getting reads from file: %s\n", fn_bam);
+	    fprintf(fd_out, "getting reads from file: %s\n", fn_bam);
 		get_reads_from_bam(fn_bam, reg_str, &all_reads, strand, subsample);
 	}
 	delete[] reg_str; 
-	fprintf(stdout, "number of reads (not filtered): %d\n", (int) all_reads.size());
+	fprintf(fd_out, "number of reads (not filtered): %d\n", (int) all_reads.size());
 	/* filter reads
 	* **************/
 	//int exon_len_filter = 8;
@@ -135,7 +157,7 @@ void Region::get_reads(char** bam_files, int num_bam_files, int intron_len_filte
 	    if (all_reads[i]->max_intron_len()<intron_len_filter && all_reads[i]->min_exon_len()>exon_len_filter && all_reads[i]->get_mismatches()<=filter_mismatch && all_reads[i]->multiple_alignment_index==0)
 	        reads.push_back(all_reads[i]);
 	}
-	fprintf(stdout, "number of reads: %d\n", (int) reads.size());
+	fprintf(fd_out, "number of reads: %d\n", (int) reads.size());
 }
 
 void Region::compute_coverage() 
@@ -152,6 +174,23 @@ void Region::compute_coverage()
 		reads[i]->get_coverage(start, stop, coverage);
 	}
 }
+
+float Region::get_coverage_global(int pstart, int pstop)
+{
+	if (!coverage)
+		compute_coverage();
+	
+	assert(pstart<pstop);
+
+	int sum = 0;
+	for (int i = pstart; i<pstop; i++)
+	{
+		assert(i>=start && i<stop);
+		sum+=coverage[i-start];
+	}
+	return ((float) sum)/(pstop-pstart+1);
+}
+
 void Region::compute_intron_coverage() 
 {
 	int num_pos = stop-start+1;
@@ -171,6 +210,22 @@ void Region::compute_intron_coverage()
 	}
 }
 
+int Region::get_intron_conf(int intron_start, int intron_stop)
+{
+	if (unique_introns.size()==0)
+		compute_intron_list();
+
+	//printf("get_intron_conf for %i -> %i\n", intron_start, intron_stop);
+	for (int i=1; i<unique_introns.size(); i++)
+	{
+		//if (unique_introns[i].first==intron_start || unique_introns[i].second==intron_stop)
+		//printf("found intron %i -> %i\n", unique_introns[i].first, unique_introns[i].second);
+		if (unique_introns[i].first==intron_start && unique_introns[i].second==intron_stop)
+			return intron_counts[i];
+	}
+	return 0;
+}
+
 void Region::compute_intron_list()
 {
 	vector<int> introns;
@@ -183,7 +238,7 @@ void Region::compute_intron_list()
 		segment intr(introns[i], introns[i+1]);
 		intron_list.push_back(intr);
 	}
-	printf("found %i introns\n", (int) intron_list.size());
+	fprintf(fd_out, "found %i introns\n", (int) intron_list.size());
 	
 	// sort by intron start
 	sort(intron_list.begin(), intron_list.end());
@@ -219,7 +274,7 @@ void Region::compute_intron_list()
 			same_start.clear();
 		}
 	}
-	printf("found %i unique introns\n", (int) unique_introns.size());
+	fprintf(fd_out, "found %i unique introns\n", (int) unique_introns.size());
 
 #ifdef READ_DEBUG
 	//check unique list

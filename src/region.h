@@ -23,6 +23,7 @@ class Region
 		int start; 
 		int stop;
 		int chr_num;
+		char* chr;
 		char strand; 
 		vector<CRead*> all_reads; 
 		vector<CRead*> reads; 
@@ -31,6 +32,7 @@ class Region
 		vector<segment> intron_list;
 		vector<segment> unique_introns;
 		vector<int> intron_counts;
+		FILE* fd_out;
 
 		Genome* gio; 
     	
@@ -41,6 +43,7 @@ class Region
 		/** constructor*/
 		Region(int pstart, int pstop, int pchr_num, char pstrand, const char* gio_fname);
 		Region(int pstart, int pstop, int pchr_num, char pstrand);
+		Region(int pstart, int pstop, char* chr, char pstrand);
 
 		/** destructor*/
 		~Region();
@@ -53,6 +56,9 @@ class Region
 		};
 
 		bool check_region(){return (start>=0 && stop<gio->contig_len(chr_num));};
+
+		float get_coverage_global(int pstart, int pstop);
+		int get_intron_conf(int intron_start, int intron_stop);
 
 		void set_gio(Genome* pgio);
 	
