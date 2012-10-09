@@ -425,7 +425,6 @@ void Region::generate_segment_graph(float seg_filter, float tss_pval)
 			//     /   \
 			//    |     |
 			//NNNNGC...AGNNN
-			//printf("introns: %i->%i (%i)\n", unique_introns[i].first, unique_introns[i].second, intron_counts[i]);
 			if (unique_introns[i].first>start && unique_introns[i].first<stop)
 				pos.push_back(unique_introns[i].first-1);// last exonic position
 			if (unique_introns[i].second>start && unique_introns[i].second<stop)
@@ -472,7 +471,7 @@ void Region::generate_segment_graph(float seg_filter, float tss_pval)
 				continue;
 			segment seg(pos[i]+1, pos[i+1]);
 			segments.push_back(seg);
-			//printf("segments: %i->%i\n", pos[i]+1, pos[i+1]);
+			//printf("%i->%i\n", pos[i]+1, pos[i+1]);
 		}
 
 		// filter segments without coverage
@@ -486,7 +485,7 @@ void Region::generate_segment_graph(float seg_filter, float tss_pval)
 				assert(false);
 			}
 			float cov = 0;
-			for (int j=segments[i].first; j<=segments[i].second; j++)
+			for (int j=segments[i].first; j<segments[i].second; j++)
 				if (coverage[j-start]>0)
 					cov++;
 
@@ -548,41 +547,28 @@ void Region::generate_segment_graph(float seg_filter, float tss_pval)
 
 
 	// remove short tss and tts segment next to splice sites
-	// those originate most likely from wrong alignments of 
+	// those originate mose likely from wrong alignments of 
 	// reads that should be spliced
-	int seg=0;
-	while (seg<segments.size())
+	for (int i=0; i<segments.size(); i++)
 	{
-		//printf("checking segment: %i->%i\n", segments[seg].first, segments[seg].second);
 		bool discard = false;
-		if (is_annotated(seg))
-		{
-			//printf("is annotated\n");
-			seg++;
+		if (is_annotated(i))
 			continue;
-		}
 
-		if (segments[seg].second-segments[seg].first>20)
-		{
-			//printf("is long\n");
-			seg++;
+		if (segments[i].second-segments[i].first>20)
 			continue;
-		}
-		if (is_initial(seg+1))
+
+		if (is_initial(i+1))
 		{
-			//printf("is initial, next is acceptor: %i\n", is_acceptor_ss(seg+1+1));
-			if (seg+1<segments.size() && segments[seg+1].first==segments[seg].second+1 && is_acceptor_ss(seg+1+1))// +1 because admat is 1 based
+			if (i+1<segments.size() && is_acceptor_ss(i+1+1))// +1 because admat is 1 based
 			{
-				//printf("discard\n");
 				discard = true;
 			}
 		}
-		else if(is_terminal(seg+1))
+		else if(is_terminal(i+1))
 		{
-			//printf("is terminal, previous is donor: %i\n", (int) is_donor_ss(seg-1+1));
-			if (seg>0 && segments[seg-1].second+1==segments[seg].first && is_donor_ss(seg-1+1))// +1 because admat is 1 based 
+			if (i>0 && is_donor_ss(i-1+1))// +1 because admat is 1 based 
 			{
-				//printf("discard\n");
 				discard = true;
 			}
 		}
@@ -592,14 +578,12 @@ void Region::generate_segment_graph(float seg_filter, float tss_pval)
 			vector<segment> seg_filtered;
 			for (int j=0; j<segments.size(); j++)
 			{
-				if (j!=seg)
+				if (j!=i)
 					seg_filtered.push_back(segments[j]);
 			}
 			segments = seg_filtered;
 			compute_admat(starts, stops);
 		}
-		else
-			seg++;
 	}
 
 	// compute transcript paths
@@ -667,17 +651,17 @@ bool Region::is_annotated(int i)
 				ret = true;
 	return ret;
 }
-bool Region::is_donor_ss(int i)
+bool Region::is_acceptor_ss(int i)
 {
 	bool ret = false;
-	for (int j=i+1; j<=segments.size(); j++)
+	for (int j=i; j<segments.size(); j++)
 	{
 		if (admat[i][j]>NO_CONNECTION && segments[i-1].second<segments[j-1].first-1)
 			ret = true;
 	}
 	return ret;
 }
-bool Region::is_acceptor_ss(int i)
+bool Region::is_donor_ss(int i)
 {
 	bool ret = false;
 	for (int j=1; j<i; j++)
@@ -690,7 +674,7 @@ bool Region::is_acceptor_ss(int i)
 bool Region::is_initial(int i)
 {
 	assert(i<admat[0].size());
-	return admat[0][i]>NO_CONNECTION || i==1;
+	return admat[0][i]>NO_CONNECTION || i==0;
 }
 bool Region::is_terminal(int i)
 {
