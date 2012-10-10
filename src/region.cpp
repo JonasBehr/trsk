@@ -68,6 +68,7 @@ Region::Region(int pstart, int pstop, char* pchr, char pstrand)
 	coverage = NULL;
 	intron_coverage = NULL;
 	fd_out = stdout;
+	gio = NULL;
 }
 /** destructor*/
 Region::~Region()

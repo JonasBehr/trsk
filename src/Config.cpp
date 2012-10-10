@@ -29,6 +29,7 @@ void Config::default_values()
 	min_orf_len = 300;
 	min_orf_sep = 0.7;
 	term_offset = 100;
+	intron_cut = 3;
 	find_single_exon_genes_orf = true;
 
 	region_rel_length = 0.25;

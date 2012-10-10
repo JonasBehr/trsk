@@ -19,6 +19,7 @@ class InferGenes
 		void infer_genes(Region* region, vector<Gene*>* genes);
 		int run_infer_genes();
 		Config* conf; 
+		vector<Region*> init_regions(bam_header_t* header);
 
 	private:
 		void process_gene(Gene* gene);

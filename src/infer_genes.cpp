@@ -558,6 +558,24 @@ void InferGenes::process_gene(Gene* gene)
 		gene->split_exons(gene->cds_exons.back().second-4, gene->cds_exons.front().first-1);
 }
 
+vector<Region*> InferGenes::init_regions(bam_header_t* header)
+{
+	vector<Region*> regions;
+	for (int i=0; i<header->n_targets; i++)
+	{
+		int start = 1;
+		int stop = header->target_len[i];
+		char* chr = chr = header->target_name[i];
+		
+		Region* reg1 = new Region(start, stop, chr, '+');
+		Region* reg2 = new Region(start, stop, chr, '-');
+
+		regions.push_back(reg1);
+		regions.push_back(reg2);
+	}
+	return regions;
+}
+
 int InferGenes::run_infer_genes()
 {   
 	if (!conf->have_bam_file)
@@ -586,8 +604,22 @@ int InferGenes::run_infer_genes()
 	term_reject_cov = 0;
 	//
 
-	vector<Region*> regions = GeneTools::init_regions(conf->gio_file);
+	// initialize regions: one for each chromosom and strand 
+	bamFile fd1 = bam_open(conf->bam_files[0], "r");
+	if (fd1==0)
+	{
+		fprintf(stderr, "[trsk]Could not open bam file: %s", conf->bam_files[0]);
+		exit(-1);
+	}
+	bam_header_t* header = bam_header_read(fd1);
+	if (header == 0)
+	{
+		fprintf(stderr, "[trsk] Invalid BAM header.");
+		exit(-1);
+	}
+	vector<Region*> regions = init_regions(header);
 	printf("regions.size(): %i\n", (int) regions.size());
+
 
 	conf->print(stdout);
 
