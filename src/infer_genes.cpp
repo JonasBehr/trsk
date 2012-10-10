@@ -619,8 +619,7 @@ int InferGenes::run_infer_genes()
 		printf("\t%s\n", conf->bam_files[i]);
 
 	vector<Gene*> genes;
-	for (int r=0; r<1; r++)
-	//for (int r=0; r<regions.size(); r++)
+	for (int r=0; r<regions.size(); r++)
 	{
 		printf("Starting with contig %s, strand %c\n", regions[r]->get_region_str(), regions[r]->strand);
 		regions[r]->get_reads(&(conf->bam_files[0]), conf->bam_files.size(), conf->max_intron_len, conf->mm_filter, conf->el_filter);
