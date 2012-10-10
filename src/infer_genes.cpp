@@ -478,6 +478,7 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 			find_intergenic_region(region, g);
 			genes->push_back(g);
 		}
+		delete exons;
 	}
 	if (conf->find_single_exon_genes_orf)
 	{
@@ -491,6 +492,8 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		vector<int> tis; 
 		vector<int> stop;
 		GeneTools::find_all_orfs(seq, len, &tis, &stop, 500);
+		delete seq;
+
 		for (int i=0; i<tis.size(); i++)
 		{
 			tis[i] = dummy_gene->map_rna_to_dna(tis[i]);
@@ -607,18 +610,17 @@ int InferGenes::run_infer_genes()
 	// initialize regions: one for each chromosom and strand 
 	//vector<Region*> regions = init_regions(header);
 	vector<Region*> regions = GeneTools::init_regions(conf->gio_file);
-	printf("regions.size(): %i\n", (int) regions.size());
-	for (int r=0; r<regions.size(); r++)
-		printf("\t%i-%i, %s, strand:%c\n", regions[r]->start, regions[r]->stop, regions[r]->get_region_str(), regions[r]->strand);
+
+	conf->print(stdout);
+
+	printf("Running on %i regions\n", (int) regions.size());
 	printf("bam_files: \n");
 	for (int i=0; i<(int)conf->bam_files.size(); i++)
 		printf("\t%s\n", conf->bam_files[i]);
 
-	conf->print(stdout);
-
 	vector<Gene*> genes;
-	//for (int r=0; r<2; r++)
-	for (int r=0; r<regions.size(); r++)
+	for (int r=0; r<1; r++)
+	//for (int r=0; r<regions.size(); r++)
 	{
 		printf("Starting with contig %s, strand %c\n", regions[r]->get_region_str(), regions[r]->strand);
 		regions[r]->get_reads(&(conf->bam_files[0]), conf->bam_files.size(), conf->max_intron_len, conf->mm_filter, conf->el_filter);

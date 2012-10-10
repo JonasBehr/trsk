@@ -219,7 +219,7 @@ void Gene::get_mRNA_seq(char** mRNA_seq, int* len)
 		reverse(sseq->begin(),(sseq->end()));
 		gio->complement((char*) sseq->c_str(), *len);
 	}
-	*mRNA_seq = new char [sseq->size()+1];
+	*mRNA_seq = new char[sseq->size()+1];
 	strcpy(*mRNA_seq, sseq->c_str());
 
 	delete sseq;
