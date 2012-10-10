@@ -15,7 +15,7 @@ Region::Region()
 	start = NULL; 
 	stop = NULL;
 	strand = NULL;
-	chr_num = NULL;
+	chr_num = -1;
 	chr = NULL;
 	seq = NULL;
 	coverage = NULL;
@@ -34,6 +34,7 @@ Region::Region(int pstart, int pstop, int pchr_num, char pstrand, const char* gi
 	seq = NULL;
 	coverage = NULL;
 	intron_coverage = NULL;
+	fd_out = stdout;
 
 	// initialize genome information object
 	gio = new Genome(); 
@@ -41,7 +42,7 @@ Region::Region(int pstart, int pstop, int pchr_num, char pstrand, const char* gi
 	if (ret<0)
 	{   
 		fprintf(stderr, "error reading genome info file: %s\n", gio_fname);
-		return;
+		exit(-1);
 	}
 }
 /** constructor*/
@@ -55,6 +56,8 @@ Region::Region(int pstart, int pstop, int pchr_num, char pstrand)
 	seq = NULL;
 	coverage = NULL;
 	intron_coverage = NULL;
+	fd_out = stdout;
+	gio = NULL;
 }
 /** constructor*/
 Region::Region(int pstart, int pstop, char* pchr, char pstrand)
@@ -62,7 +65,7 @@ Region::Region(int pstart, int pstop, char* pchr, char pstrand)
 	start = pstart; 
 	stop = pstop;
 	strand = pstrand;
-	chr_num = NULL;
+	chr_num = -1;
 	chr = pchr;
 	seq = NULL;
 	coverage = NULL;
@@ -113,9 +116,9 @@ void Region::print(_IO_FILE*& fd)
 	fprintf(fd, "region start:\t%i\n", start);
 	fprintf(fd, "region stop:\t%i\n", stop);
 	fprintf(fd, "region strand:\t%c\n", strand);
-	if (chr_num)
+	if (chr_num>-1)
 		fprintf(fd, "region chr_num:\t%i\n", chr_num);
-	if (gio && chr_num)
+	if (gio && chr_num>-1)
 		fprintf(fd, "region chr:\t%s\n", gio->get_contig_name(chr_num));
 	else if (chr)
 		fprintf(fd, "region chr:\t%s\n", chr);
@@ -129,7 +132,7 @@ char* Region::get_region_str()
 		fprintf(stderr, "genome information object not set");
 		exit(-1);
 	}
-	if (gio && chr_num)
+	if (gio && chr_num>-1)
 		sprintf(reg_str, "%s:%i-%i", gio->get_contig_name(chr_num), start, stop);
 	else if (chr)
 		sprintf(reg_str, "%s:%i-%i", chr, start, stop);

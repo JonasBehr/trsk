@@ -490,12 +490,13 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 		dummy_gene->get_mRNA_seq(&seq, &len);
 		vector<int> tis; 
 		vector<int> stop;
-		GeneTools::find_all_orfs(seq, len,  &tis, &stop, 500);
+		GeneTools::find_all_orfs(seq, len, &tis, &stop, 500);
 		for (int i=0; i<tis.size(); i++)
 		{
 			tis[i] = dummy_gene->map_rna_to_dna(tis[i]);
 			stop[i] = dummy_gene->map_rna_to_dna(stop[i]);
 		}
+		delete dummy_gene;
 		printf("found %i orfs longer than 500\n", (int) tis.size()); 
 
 		for (int i=0; i<tis.size(); i++)
@@ -530,7 +531,6 @@ void InferGenes::infer_genes(Region* region, vector<Gene*>* genes)
 				find_intergenic_region(region, g);
 				genes->push_back(g);
 			}
-				
 		}
 	}
 }
@@ -605,21 +605,14 @@ int InferGenes::run_infer_genes()
 	//
 
 	// initialize regions: one for each chromosom and strand 
-	bamFile fd1 = bam_open(conf->bam_files[0], "r");
-	if (fd1==0)
-	{
-		fprintf(stderr, "[trsk]Could not open bam file: %s", conf->bam_files[0]);
-		exit(-1);
-	}
-	bam_header_t* header = bam_header_read(fd1);
-	if (header == 0)
-	{
-		fprintf(stderr, "[trsk] Invalid BAM header.");
-		exit(-1);
-	}
-	vector<Region*> regions = init_regions(header);
+	//vector<Region*> regions = init_regions(header);
+	vector<Region*> regions = GeneTools::init_regions(conf->gio_file);
 	printf("regions.size(): %i\n", (int) regions.size());
-
+	for (int r=0; r<regions.size(); r++)
+		printf("\t%i-%i, %s, strand:%c\n", regions[r]->start, regions[r]->stop, regions[r]->get_region_str(), regions[r]->strand);
+	printf("bam_files: \n");
+	for (int i=0; i<(int)conf->bam_files.size(); i++)
+		printf("\t%s\n", conf->bam_files[i]);
 
 	conf->print(stdout);
 
